@@ -37,8 +37,20 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
+    const checkRedirect = async () => {
+      const redirectUrl = sessionStorage.getItem('auth_redirect');
+      if (redirectUrl) {
+        const { data: { session } } = await supabase!.auth.getSession();
+        if (session) {
+          sessionStorage.removeItem('auth_redirect');
+          router.replace(redirectUrl);
+        }
+      }
+    };
+    checkRedirect();
+
+    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') {
         const redirectUrl = sessionStorage.getItem('auth_redirect');
         if (redirectUrl) {
           sessionStorage.removeItem('auth_redirect');
