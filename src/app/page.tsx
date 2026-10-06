@@ -96,9 +96,9 @@ export default function Home() {
         <SaveShareButton canvas={canvas} shape={shape} />
       </header>
 
-      {/* Body - desktop */}
-      <div className="hidden md:flex flex-1 overflow-hidden">
-        <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto p-4 space-y-1 shrink-0">
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left sidebar - desktop only */}
+        <aside className="hidden md:block w-64 bg-white border-r border-gray-200 overflow-y-auto p-4 space-y-1 shrink-0">
           <ShapeSelector shape={shape} onChange={setShape} />
           <PatternGallery canvas={canvas} isAdmin={false} shape={shape} onShapeChange={setShape} />
           <ImageUploader canvas={canvas} />
@@ -109,10 +109,16 @@ export default function Home() {
           </div>
         </aside>
 
-        <main className="flex-1 p-6 flex items-center justify-center overflow-hidden relative" data-protected>
+        {/* Canvas area - shared */}
+        <main className="flex-1 p-2 md:p-6 flex items-center justify-center overflow-hidden relative" data-protected>
           <div className="w-full h-full max-w-4xl max-h-[90vh]">
             <FabricCanvas onReady={handleCanvasReady} shape={shape} />
           </div>
+
+          <div className="md:hidden absolute top-2 right-2">
+            <ObjectDimensions canvas={canvas} />
+          </div>
+
           {isWindowBlurred && (
             <div className="absolute inset-0 bg-white z-50 flex items-center justify-center">
               <div className="text-center">
@@ -125,33 +131,10 @@ export default function Home() {
           )}
         </main>
 
-        <aside className="w-56 bg-white border-l border-gray-200 overflow-hidden shrink-0">
+        {/* Right sidebar - desktop only */}
+        <aside className="hidden md:block w-56 bg-white border-l border-gray-200 overflow-hidden shrink-0">
           <LayersPanel canvas={canvas} />
         </aside>
-      </div>
-
-      {/* Body - mobile */}
-      <div className="md:hidden flex-1 relative overflow-hidden" data-protected>
-        <main className="w-full h-full flex items-center justify-center p-2" style={{ paddingBottom: '120px' }}>
-          <div className="w-full h-full">
-            <FabricCanvas onReady={handleCanvasReady} shape={shape} />
-          </div>
-        </main>
-
-        <div className="absolute top-2 right-2">
-          <ObjectDimensions canvas={canvas} />
-        </div>
-
-        {isWindowBlurred && (
-          <div className="absolute inset-0 bg-white z-50 flex items-center justify-center">
-            <div className="text-center">
-              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              <p className="text-gray-400 text-sm">Treść chroniona</p>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Mobile bottom bar */}
