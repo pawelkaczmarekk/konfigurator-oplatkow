@@ -72,7 +72,7 @@ export default function TextTool({ canvas }: TextToolProps) {
       left: A4_WIDTH_PX / 2 - 80,
       top: A4_HEIGHT_PX / 2 - 20,
       fontFamily: 'Arial',
-      fontSize: 24,
+      fontSize: 48,
       fill: '#000000',
       editable: true,
     });

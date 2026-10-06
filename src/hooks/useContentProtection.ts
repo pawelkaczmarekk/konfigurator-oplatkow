@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export function useContentProtection() {
-  const [isWindowBlurred, setIsWindowBlurred] = useState(false);
-
   useEffect(() => {
     const handleContextMenu = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -54,21 +52,11 @@ export function useContentProtection() {
       }
     };
 
-    const handleBlur = () => {
-      setIsWindowBlurred(true);
-    };
-
-    const handleFocus = () => {
-      setIsWindowBlurred(false);
-    };
-
     document.addEventListener('contextmenu', handleContextMenu);
     document.addEventListener('dragstart', handleDragStart);
     document.addEventListener('copy', handleCopy);
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('blur', handleBlur);
-    window.addEventListener('focus', handleFocus);
 
     return () => {
       document.removeEventListener('contextmenu', handleContextMenu);
@@ -76,10 +64,6 @@ export function useContentProtection() {
       document.removeEventListener('copy', handleCopy);
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('blur', handleBlur);
-      window.removeEventListener('focus', handleFocus);
     };
   }, []);
-
-  return { isWindowBlurred };
 }
