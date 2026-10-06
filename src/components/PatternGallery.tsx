@@ -74,7 +74,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const effectiveOpen = isOpen || !!externalOpen;
 
   const handleClose = useCallback(() => {
-    handleClose();
+    setIsOpen(false);
     onExternalClose?.();
   }, [onExternalClose]);
 
