@@ -14,6 +14,8 @@ import SaveShareButton from '@/components/SaveShareButton';
 import ObjectDimensions from '@/components/ObjectDimensions';
 import CropTool from '@/components/CropTool';
 import LayersPanel from '@/components/LayersPanel';
+import BottomSheet from '@/components/BottomSheet';
+import MobileBottomBar from '@/components/MobileBottomBar';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { supabase } from '@/lib/supabase-browser';
 
@@ -29,10 +31,13 @@ const FabricCanvas = dynamic(() => import('@/components/FabricCanvas'), {
   ),
 });
 
+type MobileTool = 'shape' | 'gallery' | 'upload' | 'text' | 'layers' | null;
+
 export default function Home() {
   const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [shape, setShape] = useState<ShapeConfig>({ type: 'rectangle' });
   const [cropMode, setCropMode] = useState<'crop' | 'cut' | null>(null);
+  const [mobileTool, setMobileTool] = useState<MobileTool>(null);
   const { isWindowBlurred } = useContentProtection();
   const router = useRouter();
 
@@ -65,9 +70,14 @@ export default function Home() {
     setCanvas(canvas);
   };
 
+  const handleMobileToolSelect = (tool: MobileTool) => {
+    setMobileTool(tool);
+  };
+
   return (
     <div className="h-screen flex flex-col bg-gray-100 overflow-hidden">
-      <header className="bg-white border-b border-gray-200 px-4 py-2.5 flex items-center justify-between shrink-0">
+      {/* Header - desktop */}
+      <header className="hidden md:flex bg-white border-b border-gray-200 px-4 py-2.5 items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
           <h1 className="text-lg font-bold text-gray-800">
             Konfigurator opłatków
@@ -80,7 +90,14 @@ export default function Home() {
         <ObjectDimensions canvas={canvas} />
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      {/* Header - mobile */}
+      <header className="md:hidden bg-white border-b border-gray-200 px-3 py-2 flex items-center justify-between shrink-0">
+        <h1 className="text-sm font-bold text-gray-800">Konfigurator opłatków</h1>
+        <SaveShareButton canvas={canvas} shape={shape} />
+      </header>
+
+      {/* Body - desktop */}
+      <div className="hidden md:flex flex-1 overflow-hidden">
         <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto p-4 space-y-1 shrink-0">
           <ShapeSelector shape={shape} onChange={setShape} />
           <PatternGallery canvas={canvas} isAdmin={false} shape={shape} onShapeChange={setShape} />
@@ -111,6 +128,69 @@ export default function Home() {
         <aside className="w-56 bg-white border-l border-gray-200 overflow-hidden shrink-0">
           <LayersPanel canvas={canvas} />
         </aside>
+      </div>
+
+      {/* Body - mobile */}
+      <div className="md:hidden flex-1 relative overflow-hidden" data-protected>
+        <main className="w-full h-full flex items-center justify-center p-2" style={{ paddingBottom: '120px' }}>
+          <div className="w-full h-full">
+            <FabricCanvas onReady={handleCanvasReady} shape={shape} />
+          </div>
+        </main>
+
+        <div className="absolute top-2 right-2">
+          <ObjectDimensions canvas={canvas} />
+        </div>
+
+        {isWindowBlurred && (
+          <div className="absolute inset-0 bg-white z-50 flex items-center justify-center">
+            <div className="text-center">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <p className="text-gray-400 text-sm">Treść chroniona</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Mobile bottom bar */}
+      <MobileBottomBar
+        canvas={canvas}
+        activeTool={mobileTool}
+        onToolSelect={handleMobileToolSelect}
+        onCropMode={setCropMode}
+      />
+
+      {/* Mobile bottom sheets */}
+      <BottomSheet isOpen={mobileTool === 'shape'} onClose={() => setMobileTool(null)} title="Kształt opłatka">
+        <ShapeSelector shape={shape} onChange={setShape} />
+      </BottomSheet>
+
+      <BottomSheet isOpen={mobileTool === 'upload'} onClose={() => setMobileTool(null)} title="Twoja grafika">
+        <ImageUploader canvas={canvas} />
+      </BottomSheet>
+
+      <BottomSheet isOpen={mobileTool === 'text'} onClose={() => setMobileTool(null)} title="Tekst">
+        <TextTool canvas={canvas} />
+      </BottomSheet>
+
+      <BottomSheet isOpen={mobileTool === 'layers'} onClose={() => setMobileTool(null)} title="Warstwy">
+        <div className="h-[40vh]">
+          <LayersPanel canvas={canvas} />
+        </div>
+      </BottomSheet>
+
+      <div className="md:hidden">
+        <PatternGallery
+          canvas={canvas}
+          isAdmin={false}
+          shape={shape}
+          onShapeChange={setShape}
+          externalOpen={mobileTool === 'gallery'}
+          onExternalClose={() => setMobileTool(null)}
+          hideButton
+        />
       </div>
 
       <CropTool canvas={canvas} mode={cropMode} onDone={() => setCropMode(null)} />

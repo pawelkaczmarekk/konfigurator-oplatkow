@@ -11,6 +11,9 @@ interface PatternGalleryProps {
   isAdmin?: boolean;
   shape?: ShapeConfig;
   onShapeChange?: (shape: ShapeConfig) => void;
+  externalOpen?: boolean;
+  onExternalClose?: () => void;
+  hideButton?: boolean;
 }
 
 interface PatternItem {
@@ -66,8 +69,18 @@ function buildCategoryTree(folders: string[]): CategoryNode[] {
   return root;
 }
 
-export default function PatternGallery({ canvas, isAdmin = false, shape, onShapeChange }: PatternGalleryProps) {
+export default function PatternGallery({ canvas, isAdmin = false, shape, onShapeChange, externalOpen, onExternalClose, hideButton }: PatternGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const effectiveOpen = isOpen || !!externalOpen;
+
+  const handleClose = useCallback(() => {
+    handleClose();
+    onExternalClose?.();
+  }, [onExternalClose]);
+
+  useEffect(() => {
+    if (externalOpen) setIsOpen(true);
+  }, [externalOpen]);
   const [activeTab, setActiveTab] = useState<'graphics' | 'templates'>('graphics');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
@@ -137,7 +150,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       canvas.add(img);
       canvas.setActiveObject(img);
       canvas.renderAll();
-      setIsOpen(false);
+      handleClose();
     } catch (err) {
       console.error('Błąd dodawania wzoru:', err);
     }
@@ -161,7 +174,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       }
 
       canvas.renderAll();
-      setIsOpen(false);
+      handleClose();
     } catch (err) {
       console.error('Błąd ładowania szablonu:', err);
     }
@@ -170,7 +183,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === 'Escape') handleClose();
     };
     document.addEventListener('keydown', handleKey);
     return () => document.removeEventListener('keydown', handleKey);
@@ -409,22 +422,24 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
 
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 border-gray-200 bg-white hover:border-amber-400 hover:bg-amber-50 transition-colors text-sm font-medium text-gray-700"
-      >
-        <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        Galeria grafik
-      </button>
+      {!hideButton && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border-2 border-gray-200 bg-white hover:border-amber-400 hover:bg-amber-50 transition-colors text-sm font-medium text-gray-700"
+        >
+          <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          Galeria grafik
+        </button>
+      )}
 
-      {isOpen && (
+      {effectiveOpen && (
         <div
           ref={overlayRef}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           onClick={(e) => {
-            if (e.target === overlayRef.current) setIsOpen(false);
+            if (e.target === overlayRef.current) handleClose();
           }}
         >
           <div className="bg-white rounded-xl shadow-2xl w-[1100px] max-w-[95vw] h-[85vh] flex flex-col overflow-hidden">
@@ -456,7 +471,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                   </div>
                 </div>
                 <button
-                  onClick={() => setIsOpen(false)}
+                  onClick={() => handleClose()}
                   className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
