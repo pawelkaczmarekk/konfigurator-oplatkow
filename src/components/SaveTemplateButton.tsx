@@ -44,7 +44,7 @@ export default function SaveTemplateButton({ canvas, shape }: SaveTemplateButton
 
       let thumbnail: string | null = null;
       try {
-        const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 0.3 });
+        const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 0.6 });
         thumbnail = dataUrl;
       } catch {}
 
