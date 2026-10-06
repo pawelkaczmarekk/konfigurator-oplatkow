@@ -10,14 +10,27 @@ interface TextToolProps {
 }
 
 const FONTS = [
-  { value: 'Arial', label: 'Arial' },
-  { value: 'Times New Roman', label: 'Times New Roman' },
-  { value: 'Georgia', label: 'Georgia' },
-  { value: 'Verdana', label: 'Verdana' },
-  { value: 'Courier New', label: 'Courier New' },
-  { value: 'Impact', label: 'Impact' },
-  { value: 'Comic Sans MS', label: 'Comic Sans MS' },
-  { value: 'Trebuchet MS', label: 'Trebuchet MS' },
+  { value: 'Great Vibes', label: 'Great Vibes', group: 'ozdobne' },
+  { value: 'Dancing Script', label: 'Dancing Script', group: 'ozdobne' },
+  { value: 'Pinyon Script', label: 'Pinyon Script', group: 'ozdobne' },
+  { value: 'Alex Brush', label: 'Alex Brush', group: 'ozdobne' },
+  { value: 'Sacramento', label: 'Sacramento', group: 'ozdobne' },
+  { value: 'Parisienne', label: 'Parisienne', group: 'ozdobne' },
+  { value: 'Tangerine', label: 'Tangerine', group: 'ozdobne' },
+  { value: 'Satisfy', label: 'Satisfy', group: 'ozdobne' },
+  { value: 'Sail', label: 'Sail', group: 'ozdobne' },
+  { value: 'Lobster', label: 'Lobster', group: 'ozdobne' },
+  { value: 'Playfair Display', label: 'Playfair Display', group: 'eleganckie' },
+  { value: 'Cormorant Garamond', label: 'Cormorant Garamond', group: 'eleganckie' },
+  { value: 'Lora', label: 'Lora', group: 'eleganckie' },
+  { value: 'Merriweather', label: 'Merriweather', group: 'eleganckie' },
+  { value: 'Arial', label: 'Arial', group: 'podstawowe' },
+  { value: 'Times New Roman', label: 'Times New Roman', group: 'podstawowe' },
+  { value: 'Georgia', label: 'Georgia', group: 'podstawowe' },
+  { value: 'Verdana', label: 'Verdana', group: 'podstawowe' },
+  { value: 'Courier New', label: 'Courier New', group: 'podstawowe' },
+  { value: 'Impact', label: 'Impact', group: 'podstawowe' },
+  { value: 'Trebuchet MS', label: 'Trebuchet MS', group: 'podstawowe' },
 ];
 
 const FONT_SIZES = [8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 42, 48, 56, 64, 72, 96];
@@ -152,11 +165,27 @@ export default function TextTool({ canvas }: TextToolProps) {
             onChange={(e) => handleFontFamily(e.target.value)}
             className={selectClass}
           >
-            {FONTS.map((f) => (
-              <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
-                {f.label}
-              </option>
-            ))}
+            <optgroup label="Ozdobne">
+              {FONTS.filter(f => f.group === 'ozdobne').map((f) => (
+                <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                  {f.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Eleganckie">
+              {FONTS.filter(f => f.group === 'eleganckie').map((f) => (
+                <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                  {f.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label="Podstawowe">
+              {FONTS.filter(f => f.group === 'podstawowe').map((f) => (
+                <option key={f.value} value={f.value} style={{ fontFamily: f.value }}>
+                  {f.label}
+                </option>
+              ))}
+            </optgroup>
           </select>
 
           <div className="flex gap-1">
