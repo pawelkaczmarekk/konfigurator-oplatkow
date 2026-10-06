@@ -18,6 +18,7 @@ import { useContentProtection } from '@/hooks/useContentProtection';
 import { supabase } from '@/lib/supabase-browser';
 import { isAllowedEmail } from '@/lib/auth-config';
 import ExportPdfButton from '@/components/ExportPdfButton';
+import SaveTemplateButton from '@/components/SaveTemplateButton';
 
 const FabricCanvas = dynamic(() => import('@/components/FabricCanvas'), {
   ssr: false,
@@ -162,11 +163,12 @@ export default function AdminPage() {
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto p-4 space-y-1 shrink-0">
           <ShapeSelector shape={shape} onChange={setShape} />
-          <PatternGallery canvas={canvas} isAdmin={true} />
+          <PatternGallery canvas={canvas} isAdmin={true} shape={shape} onShapeChange={setShape} />
           <ImageUploader canvas={canvas} />
           <TextTool canvas={canvas} />
           <div className="border-t border-gray-100 my-2" />
           <div className="space-y-2">
+            <SaveTemplateButton canvas={canvas} shape={shape} />
             <ExportPdfButton canvas={canvas} />
             <SaveShareButton canvas={canvas} shape={shape} />
           </div>
