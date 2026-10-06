@@ -141,26 +141,6 @@ export default function MobileBottomBar({ canvas, activeTool, onToolSelect, onCr
         )}
       </div>
       <div className="flex items-center justify-center gap-0.5 px-2 py-1 border-t border-gray-100 overflow-x-auto">
-        {actionBtn(rotateLeft, 'Obróć',
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a5 5 0 015 5v2M3 10l4-4M3 10l4 4" />
-          </svg>
-        )}
-        {actionBtn(rotateRight, 'Obróć',
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a5 5 0 00-5 5v2M21 10l-4-4M21 10l-4 4" />
-          </svg>
-        )}
-        {actionBtn(flipH, 'Odbij H',
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 3v18M17 3v18M3 12h18" />
-          </svg>
-        )}
-        {actionBtn(flipV, 'Odbij V',
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 17h18M12 3v18" />
-          </svg>
-        )}
         {actionBtn(bringForward, 'Wyżej',
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
