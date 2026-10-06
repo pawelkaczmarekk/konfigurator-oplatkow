@@ -45,3 +45,34 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'Błąd pobierania projektów' }, { status: 500 });
   }
 }
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { canvasJson, shape } = body;
+
+    if (!canvasJson) {
+      return NextResponse.json({ error: 'Brak danych canvas' }, { status: 400 });
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      return NextResponse.json({ error: 'Baza niedostępna' }, { status: 503 });
+    }
+
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        canvas_json: canvasJson,
+        shape: shape || { type: 'rectangle' },
+      })
+      .select('id')
+      .single();
+
+    if (error) throw error;
+
+    return NextResponse.json({ id: data.id });
+  } catch (err) {
+    console.error('Błąd zapisu projektu:', err);
+    return NextResponse.json({ error: 'Błąd zapisu projektu' }, { status: 500 });
+  }
+}
