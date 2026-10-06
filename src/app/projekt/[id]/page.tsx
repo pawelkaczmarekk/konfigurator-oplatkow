@@ -132,6 +132,7 @@ export default function ProjektPage() {
   const handleLogin = async () => {
     setLoggingIn(true);
     const redirectTo = `${window.location.origin}/projekt/${id}`;
+    sessionStorage.setItem('auth_redirect', `/projekt/${id}`);
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },

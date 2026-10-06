@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { Canvas } from 'fabric';
 import { ShapeConfig } from '@/types';
 import ShapeSelector from '@/components/ShapeSelector';
@@ -32,6 +33,18 @@ export default function Home() {
   const [shape, setShape] = useState<ShapeConfig>({ type: 'rectangle' });
   const [cropMode, setCropMode] = useState<'crop' | 'cut' | null>(null);
   const { isWindowBlurred } = useContentProtection();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (window.location.hash.includes('access_token')) {
+      const redirectUrl = sessionStorage.getItem('auth_redirect');
+      if (redirectUrl) {
+        sessionStorage.removeItem('auth_redirect');
+        window.location.hash = '';
+        router.replace(redirectUrl);
+      }
+    }
+  }, [router]);
 
   const handleCanvasReady = (canvas: Canvas) => {
     setCanvas(canvas);
