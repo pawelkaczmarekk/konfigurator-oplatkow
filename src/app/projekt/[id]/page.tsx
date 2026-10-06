@@ -25,7 +25,7 @@ export default function ProjektPage() {
   const [loggingIn, setLoggingIn] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase!.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         if (isAllowedEmail(session.user.email ?? '')) {
           setUser(session.user);
@@ -36,7 +36,7 @@ export default function ProjektPage() {
       setAuthLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase!.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         if (isAllowedEmail(session.user.email ?? '')) {
           setUser(session.user);
@@ -59,7 +59,7 @@ export default function ProjektPage() {
     if (!id || !user) return;
 
     console.log('Pobieram projekt, id:', id, 'user:', user.email);
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase!.auth.getSession().then(({ data: { session } }) => {
       const token = session?.access_token;
       console.log('Token:', token ? 'mam' : 'brak');
 
@@ -133,14 +133,14 @@ export default function ProjektPage() {
     setLoggingIn(true);
     const redirectTo = `${window.location.origin}/projekt/${id}`;
     sessionStorage.setItem('auth_redirect', `/projekt/${id}`);
-    await supabase.auth.signInWithOAuth({
+    await supabase!.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
     });
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await supabase!.auth.signOut();
     setUser(null);
     setProject(null);
     canvasRef.current = null;

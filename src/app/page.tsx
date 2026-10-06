@@ -15,6 +15,7 @@ import ObjectDimensions from '@/components/ObjectDimensions';
 import CropTool from '@/components/CropTool';
 import LayersPanel from '@/components/LayersPanel';
 import { useContentProtection } from '@/hooks/useContentProtection';
+import { supabase } from '@/lib/supabase-browser';
 
 const FabricCanvas = dynamic(() => import('@/components/FabricCanvas'), {
   ssr: false,
@@ -36,14 +37,16 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    if (window.location.hash.includes('access_token')) {
-      const redirectUrl = sessionStorage.getItem('auth_redirect');
-      if (redirectUrl) {
-        sessionStorage.removeItem('auth_redirect');
-        window.location.hash = '';
-        router.replace(redirectUrl);
+    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        const redirectUrl = sessionStorage.getItem('auth_redirect');
+        if (redirectUrl) {
+          sessionStorage.removeItem('auth_redirect');
+          router.replace(redirectUrl);
+        }
       }
-    }
+    });
+    return () => subscription.unsubscribe();
   }, [router]);
 
   const handleCanvasReady = (canvas: Canvas) => {
