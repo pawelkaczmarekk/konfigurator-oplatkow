@@ -8,11 +8,10 @@ CREATE TABLE IF NOT EXISTS projects (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Zezwalaj na odczyt i zapis bez autoryzacji (anon key)
 ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Anyone can insert projects" ON projects
   FOR INSERT WITH CHECK (true);
 
-CREATE POLICY "Anyone can read projects" ON projects
-  FOR SELECT USING (true);
+CREATE POLICY "Authenticated users can read projects" ON projects
+  FOR SELECT USING (auth.role() = 'authenticated');

@@ -1,12 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProject } from '@/lib/store';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json(
+        { error: 'Wymagane logowanie' },
+        { status: 401 }
+      );
+    }
+
+    const supabaseServer = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Nieprawidłowy token' },
+        { status: 401 }
+      );
+    }
+
     const { id } = await params;
 
     if (isSupabaseConfigured && supabase) {

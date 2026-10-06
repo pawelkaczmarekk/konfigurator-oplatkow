@@ -9,7 +9,6 @@ import ImageUploader from '@/components/ImageUploader';
 import PatternGallery from '@/components/PatternGallery';
 import TextTool from '@/components/TextTool';
 import Toolbar from '@/components/Toolbar';
-import ExportPdfButton from '@/components/ExportPdfButton';
 import SaveShareButton from '@/components/SaveShareButton';
 import ObjectDimensions from '@/components/ObjectDimensions';
 import CropTool from '@/components/CropTool';
@@ -61,7 +60,6 @@ export default function Home() {
           <TextTool canvas={canvas} />
           <div className="border-t border-gray-100 my-2" />
           <div className="space-y-2">
-            <ExportPdfButton canvas={canvas} />
             <SaveShareButton canvas={canvas} shape={shape} />
           </div>
         </aside>
