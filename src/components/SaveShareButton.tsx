@@ -23,7 +23,6 @@ export default function SaveShareButton({ canvas, shape }: SaveShareButtonProps)
     try {
       const json = canvas.toJSON();
       const canvasJson = JSON.stringify(json);
-      console.log('Zapisuję canvas:', (json as any).objects?.length, 'obiektów');
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

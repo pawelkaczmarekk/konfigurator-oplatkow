@@ -13,7 +13,6 @@ import { isAllowedEmail } from '@/lib/auth-config';
 export default function ProjektPage() {
   const params = useParams();
   const id = params?.id as string;
-  console.log('ProjektPage render, id:', id, 'params:', params);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<Canvas | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,23 +60,19 @@ export default function ProjektPage() {
     console.log('Pobieram projekt, id:', id, 'user:', user.email);
     supabase!.auth.getSession().then(({ data: { session } }) => {
       const token = session?.access_token;
-      console.log('Token:', token ? 'mam' : 'brak');
 
       fetch(`/api/projects/${id}`, {
         headers: token ? { authorization: `Bearer ${token}` } : {},
       })
         .then((res) => {
-          console.log('Fetch status:', res.status);
           if (!res.ok) throw new Error('Nie znaleziono projektu');
           return res.json();
         })
         .then((data) => {
-          console.log('Dane projektu:', data);
           setProject(data);
           setLoading(false);
         })
         .catch((err) => {
-          console.error('Błąd pobierania:', err.message);
           setError(err.message);
           setLoading(false);
         });
@@ -115,9 +110,7 @@ export default function ProjektPage() {
     canvas.setZoom(scale);
 
     const json = JSON.parse(project.canvasJson);
-    console.log('Wczytuję canvas:', (json as any).objects?.length, 'obiektów');
     canvas.loadFromJSON(json).then(() => {
-      console.log('Canvas po loadFromJSON:', canvas.getObjects().length, 'obiektów');
       applyShapeToCanvas(canvas, project.shape);
       canvas.renderAll();
       canvasRef.current = canvas;
@@ -133,6 +126,7 @@ export default function ProjektPage() {
     setLoggingIn(true);
     const redirectTo = `${window.location.origin}/projekt/${id}`;
     sessionStorage.setItem('auth_redirect', `/projekt/${id}`);
+    localStorage.setItem('auth_redirect', `/projekt/${id}`);
     await supabase!.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
@@ -151,8 +145,6 @@ export default function ProjektPage() {
     const dataUrl = getCanvasDataUrl(canvasRef.current);
     await exportCanvasToPdf(dataUrl);
   };
-
-  console.log('Auth state: authLoading=', authLoading, 'user=', user?.email, 'accessDenied=', accessDenied);
 
   if (authLoading) {
     return (
@@ -239,9 +231,6 @@ export default function ProjektPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <div className="bg-yellow-100 p-2 text-xs">
-        DEBUG: project={project ? 'yes' : 'null'}, loading={loading.toString()}, error={error}, user={user?.email}
-      </div>
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-gray-800">Podgląd projektu</h1>

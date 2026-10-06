@@ -38,12 +38,12 @@ export default function Home() {
 
   useEffect(() => {
     const checkRedirect = async () => {
-      const redirectUrl = sessionStorage.getItem('auth_redirect');
-      if (redirectUrl) {
+      const redirectUrl = localStorage.getItem('auth_redirect');
+      if (redirectUrl && window.location.hash) {
         const { data: { session } } = await supabase!.auth.getSession();
         if (session) {
-          sessionStorage.removeItem('auth_redirect');
-          router.replace(redirectUrl);
+          localStorage.removeItem('auth_redirect');
+          window.location.href = redirectUrl;
         }
       }
     };
@@ -51,10 +51,10 @@ export default function Home() {
 
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
-        const redirectUrl = sessionStorage.getItem('auth_redirect');
+        const redirectUrl = localStorage.getItem('auth_redirect');
         if (redirectUrl) {
-          sessionStorage.removeItem('auth_redirect');
-          router.replace(redirectUrl);
+          localStorage.removeItem('auth_redirect');
+          window.location.href = redirectUrl;
         }
       }
     });
