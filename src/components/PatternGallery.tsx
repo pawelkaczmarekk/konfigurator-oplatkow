@@ -12,7 +12,7 @@ interface PatternItem {
   id: string;
   name: string;
   src: string;
-  category: string;
+  folder: string;
 }
 
 interface CategoryNode {
@@ -22,72 +22,83 @@ interface CategoryNode {
   isFolder?: boolean;
 }
 
-const categoryTree: CategoryNode[] = [
-  {
-    key: 'gotowe-wzory',
-    label: 'Gotowe wzory',
-    isFolder: true,
-    children: [],
-  },
-  {
-    key: 'ramki',
-    label: 'Ramki',
-    isFolder: true,
-    children: [],
-  },
-  {
-    key: 'figurki-elementy',
-    label: 'Figurki / Elementy',
-    isFolder: true,
-    children: [
-      { key: 'figurki-elementy-psi-patrol', label: 'Psi Patrol' },
-      { key: 'figurki-elementy-swiateczne', label: 'Świąteczne' },
-      { key: 'figurki-elementy-inne', label: 'Inne' },
-    ],
-  },
-];
+const folderLabels: Record<string, string> = {
+  'figurki-elementy': 'Figurki / Elementy',
+  'ramki': 'Ramki',
+  'gotowe-wzory': 'Gotowe wzory',
+};
 
-function flattenCategories(nodes: CategoryNode[], prefix = ''): { key: string; label: string; depth: number }[] {
+function buildCategoryTree(folders: string[]): CategoryNode[] {
+  const root: CategoryNode[] = [];
+  const childMap: Record<string, CategoryNode[]> = {};
+
+  for (const folder of folders) {
+    const parts = folder.split('-');
+    const parentKey = parts.length > 1 ? parts.slice(0, -1).join('-') : null;
+    const node: CategoryNode = {
+      key: folder,
+      label: folderLabels[folder] || folder,
+      isFolder: true,
+      children: [],
+    };
+
+    if (parentKey && childMap[parentKey]) {
+      childMap[parentKey].push(node);
+    } else {
+      root.push(node);
+    }
+    childMap[folder] = node.children!;
+  }
+
+  return root;
+}
+
+function flattenCategories(nodes: CategoryNode[], depth = 0): { key: string; label: string; depth: number }[] {
   const result: { key: string; label: string; depth: number }[] = [];
   for (const node of nodes) {
-    result.push({ key: node.key, label: node.label, depth: prefix.split('/').length - 1 });
-    if (node.children) {
-      result.push(...flattenCategories(node.children, prefix + node.key + '/'));
+    result.push({ key: node.key, label: node.label, depth });
+    if (node.children?.length) {
+      result.push(...flattenCategories(node.children, depth + 1));
     }
   }
   return result;
 }
 
-const allCategories = flattenCategories(categoryTree);
-
-const patterns: PatternItem[] = [
-  { id: 'figurka1', name: 'Opłatek 1', src: '/grafiki/figurki elementy/oplatek1.jpg', category: 'figurki-elementy' },
-  { id: 'figurka2', name: 'Opłatek 2', src: '/grafiki/figurki elementy/oplatek2.jpg', category: 'figurki-elementy' },
-  { id: 'figurka3', name: 'Opłatek 3', src: '/grafiki/figurki elementy/oplatek 3.png', category: 'figurki-elementy-psi-patrol' },
-  { id: 'ramka1', name: 'Ramka 1', src: '/grafiki/ramki/il_570xN.4625700682_civt.webp', category: 'ramki' },
-];
-
 export default function PatternGallery({ canvas }: PatternGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['figurki-elementy']));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
+  const [patterns, setPatterns] = useState<PatternItem[]>([]);
+  const [loading, setLoading] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    setLoading(true);
+    fetch('/api/graphics')
+      .then((res) => res.json())
+      .then((data) => {
+        setPatterns(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, [isOpen]);
+
+  const folders = [...new Set(patterns.map((p) => p.folder))];
+  const categoryTree = buildCategoryTree(folders);
+
   const filtered = patterns.filter((p) => {
-    const matchCat = activeCategory === 'all' || p.category === activeCategory || p.category.startsWith(activeCategory + '-');
+    const matchCat = activeCategory === 'all' || p.folder === activeCategory || p.folder.startsWith(activeCategory + '-');
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   });
 
   const addPattern = useCallback(async (pattern: PatternItem) => {
-    if (!canvas) {
-      console.error('Canvas nie jest gotowy');
-      return;
-    }
+    if (!canvas) return;
 
     try {
-      const img = await FabricImage.fromURL(pattern.src);
+      const img = await FabricImage.fromURL(pattern.src, { crossOrigin: 'anonymous' });
 
       const targetSize = Math.min(A4_WIDTH_PX - 2 * MARGIN_PX, A4_HEIGHT_PX - 2 * MARGIN_PX) * 0.6;
       const scale = targetSize / Math.max(img.width || 1, img.height || 1);
@@ -120,11 +131,8 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
   const toggleCategory = (key: string) => {
     setExpandedCategories((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   };
@@ -138,9 +146,7 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
       <div key={node.key}>
         <button
           onClick={() => {
-            if (hasChildren) {
-              toggleCategory(node.key);
-            }
+            if (hasChildren) toggleCategory(node.key);
             setActiveCategory(node.key);
           }}
           className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-1 ${
@@ -153,9 +159,7 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
           {hasChildren && (
             <svg
               className={`w-3 h-3 transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor"
             >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
@@ -232,7 +236,11 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
               </nav>
 
               <div className="flex-1 p-4 overflow-y-auto">
-                {filtered.length === 0 ? (
+                {loading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" />
+                  </div>
+                ) : filtered.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 text-gray-400">
                     <svg className="w-12 h-12 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -252,6 +260,7 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
                             src={pattern.src}
                             alt={pattern.name}
                             className="w-full h-full object-cover"
+                            crossOrigin="anonymous"
                           />
                         </div>
                         <span className="text-xs text-gray-600 group-hover:text-amber-700 font-medium">
