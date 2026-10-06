@@ -23,7 +23,6 @@ export default function AdminPage() {
   const [uploading, setUploading] = useState(false);
   const [newName, setNewName] = useState('');
   const [newFolder, setNewFolder] = useState('');
-  const [customFolder, setCustomFolder] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -85,7 +84,7 @@ export default function AdminPage() {
     const file = fileRef.current?.files?.[0];
     if (!file || !newName) return;
 
-    const folder = newFolder === '__custom__' ? customFolder : newFolder;
+    const folder = newFolder;
     if (!folder) return;
 
     setUploading(true);
@@ -107,7 +106,7 @@ export default function AdminPage() {
       if (!res.ok) throw new Error('Błąd wgrywania');
 
       setNewName('');
-      setCustomFolder('');
+      setNewFolder('');
       if (fileRef.current) fileRef.current.value = '';
       await loadGraphics();
     } catch (err) {
@@ -217,26 +216,21 @@ export default function AdminPage() {
               onChange={(e) => setNewName(e.target.value)}
               className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
-            <select
-              value={newFolder}
-              onChange={(e) => setNewFolder(e.target.value)}
-              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
-            >
-              <option value="">Wybierz folder</option>
-              {folders.map((f) => (
-                <option key={f} value={f}>{f}</option>
-              ))}
-              <option value="__custom__">Nowy folder...</option>
-            </select>
-            {newFolder === '__custom__' && (
+            <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="Nazwa nowego folderu"
-                value={customFolder}
-                onChange={(e) => setCustomFolder(e.target.value)}
-                className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                list="folder-list"
+                placeholder="Folder (np. ramki)"
+                value={newFolder}
+                onChange={(e) => setNewFolder(e.target.value)}
+                className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
               />
-            )}
+              <datalist id="folder-list">
+                {folders.map((f) => (
+                  <option key={f} value={f} />
+                ))}
+              </datalist>
+            </div>
             <input
               ref={fileRef}
               type="file"
