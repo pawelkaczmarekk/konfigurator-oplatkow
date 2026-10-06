@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/lib/supabase-browser';
 import { isAllowedEmail } from '@/lib/auth-config';
 import Link from 'next/link';
@@ -11,11 +11,22 @@ interface Project {
   createdAt: string;
 }
 
+function extractId(input: string): string {
+  try {
+    const url = new URL(input);
+    const parts = url.pathname.split('/');
+    return parts[parts.length - 1] || input;
+  } catch {
+    return input.trim();
+  }
+}
+
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     supabase!.auth.getSession().then(({ data: { session } }) => {
@@ -39,7 +50,7 @@ export default function AdminProjectsPage() {
 
   useEffect(() => {
     if (!user) return;
-    const token = supabase!.auth.getSession().then(({ data: { session } }) => {
+    supabase!.auth.getSession().then(({ data: { session } }) => {
       if (!session) return;
       fetch('/api/projects', {
         headers: { authorization: `Bearer ${session.access_token}` },
@@ -52,6 +63,12 @@ export default function AdminProjectsPage() {
         .catch(() => setLoading(false));
     });
   }, [user]);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return projects;
+    const q = extractId(search).toLowerCase();
+    return projects.filter((p) => p.id.toLowerCase().includes(q));
+  }, [projects, search]);
 
   if (authLoading) {
     return (
@@ -87,39 +104,44 @@ export default function AdminProjectsPage() {
           <h1 className="text-lg font-bold text-gray-800">Projekty</h1>
           <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded font-medium">Admin</span>
         </div>
-        <span className="text-xs text-gray-400">{projects.length} projektów</span>
+        <span className="text-xs text-gray-400">{filtered.length} projektów</span>
       </header>
 
       <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="relative mb-4">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Szukaj po ID lub wklej link do projektu..."
+            className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+          />
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" />
           </div>
-        ) : projects.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-gray-400">
-            <p>Brak projektów</p>
+            <p>{search ? 'Nie znaleziono projektów' : 'Brak projektów'}</p>
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Miniatura</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID projektu</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Link</th>
                   <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Utworzono</th>
                 </tr>
               </thead>
               <tbody>
-                {projects.map((project) => (
+                {filtered.map((project) => (
                   <tr key={project.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="w-14 h-20 bg-gray-100 rounded border border-gray-200 flex items-center justify-center overflow-hidden">
-                        <svg className="w-6 h-6 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                    </td>
                     <td className="px-4 py-3">
                       <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">{project.id}</span>
                     </td>
