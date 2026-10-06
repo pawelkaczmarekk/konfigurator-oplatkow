@@ -121,28 +121,21 @@ export async function DELETE(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.replace('Bearer ', '');
-    if (!token) {
-      return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json({ error: 'Brak id szablonu' }, { status: 400 });
     }
 
-    const anonClient = getAnonClient();
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
-    }
-
-    const supabase = getAuthClient(token);
-    const { id } = await request.json();
-
-    const { data: template } = await supabase
+    const supabase = getAnonClient();
+    const { data: template, error } = await supabase
       .from('templates')
       .select('canvas_json, shape_config')
       .eq('id', id)
       .single();
 
-    if (!template) {
+    if (error || !template) {
+      console.error('Template fetch error:', error);
       return NextResponse.json({ error: 'Szablon nie istnieje' }, { status: 404 });
     }
 

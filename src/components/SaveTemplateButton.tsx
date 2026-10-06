@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Canvas } from 'fabric';
 import { ShapeConfig } from '@/types';
 import { supabase } from '@/lib/supabase-browser';
@@ -18,6 +18,19 @@ export default function SaveTemplateButton({ canvas, shape }: SaveTemplateButton
   const [newFolder, setNewFolder] = useState('');
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [existingFolders, setExistingFolders] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!showModal) return;
+    Promise.all([
+      fetch('/api/graphics').then(r => r.json()),
+      fetch('/api/templates').then(r => r.json()),
+    ]).then(([graphics, templates]) => {
+      const gfxFolders = Array.isArray(graphics) ? graphics.map((g: any) => g.folder) : [];
+      const tplFolders = Array.isArray(templates) ? templates.map((t: any) => t.folder) : [];
+      setExistingFolders([...new Set([...gfxFolders, ...tplFolders])]);
+    }).catch(() => {});
+  }, [showModal]);
 
   const handleSave = async () => {
     if (!canvas) return;
@@ -116,18 +129,21 @@ export default function SaveTemplateButton({ canvas, shape }: SaveTemplateButton
 
               {!showNewFolder ? (
                 <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Folder (np. gotowe wzory)"
+                  <select
                     value={folder}
                     onChange={(e) => setFolder(e.target.value)}
                     className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
-                  />
+                  >
+                    <option value="">Wybierz folder</option>
+                    {existingFolders.map((f) => (
+                      <option key={f} value={f}>{f}</option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => setShowNewFolder(true)}
                     className="px-3 py-2 text-xs text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap"
                   >
-                    + Nowy
+                    + Nowy folder
                   </button>
                 </div>
               ) : (

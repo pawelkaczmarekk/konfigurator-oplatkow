@@ -81,6 +81,8 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
+  const [newFolderInput, setNewFolderInput] = useState('');
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -286,6 +288,39 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     }
   };
 
+  const handleCreateFolder = async () => {
+    if (!newFolderInput.trim()) return;
+    const folderName = newFolderInput.trim();
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+
+      const placeholderFile = new File(['placeholder'], '.gitkeep', { type: 'text/plain' });
+      const res = await fetch('/api/graphics', {
+        method: 'POST',
+        headers: { authorization: `Bearer ${token}` },
+        body: (() => {
+          const fd = new FormData();
+          fd.append('file', placeholderFile);
+          fd.append('name', '.gitkeep');
+          fd.append('folder', folderName);
+          return fd;
+        })(),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
+
+      setNewFolderInput('');
+      setShowCreateFolder(false);
+      loadGraphics();
+    } catch (err) {
+      console.error('Błąd tworzenia folderu:', err);
+    }
+  };
+
   const handleDeleteFolder = async (folder: string) => {
     if (activeTab === 'graphics') {
       const folderItems = patterns.filter(p => p.folder === folder);
@@ -456,6 +491,37 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                 >
                   Wszystkie
                 </button>
+                {isAdmin && activeTab === 'graphics' && !showCreateFolder && (
+                  <button
+                    onClick={() => setShowCreateFolder(true)}
+                    className="w-full text-left px-4 py-2 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                  >
+                    + Nowy folder
+                  </button>
+                )}
+                {isAdmin && activeTab === 'graphics' && showCreateFolder && (
+                  <div className="px-3 py-1.5 flex items-center gap-1">
+                    <input
+                      type="text"
+                      placeholder="Nazwa folderu"
+                      value={newFolderInput}
+                      onChange={(e) => setNewFolderInput(e.target.value)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleCreateFolder(); if (e.key === 'Escape') { setShowCreateFolder(false); setNewFolderInput(''); } }}
+                      className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+                      autoFocus
+                    />
+                    <button onClick={handleCreateFolder} className="p-1 text-green-600 hover:text-green-700 shrink-0">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                    <button onClick={() => { setShowCreateFolder(false); setNewFolderInput(''); }} className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
                 {categoryTree.map((cat) => renderCategory(cat))}
               </nav>
 
