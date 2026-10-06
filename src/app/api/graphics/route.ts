@@ -4,9 +4,19 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+function getAnonClient() {
+  return createClient(supabaseUrl, supabaseAnonKey);
+}
+
+function getAuthClient(token: string) {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+}
+
 export async function GET() {
   try {
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabase = getAnonClient();
     const { data, error } = await supabase
       .from('graphics')
       .select('id, name, folder, filename, created_at')
@@ -38,11 +48,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const anonClient = getAnonClient();
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
     }
+
+    const supabase = getAuthClient(token);
 
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -59,7 +71,10 @@ export async function POST(request: NextRequest) {
       .from('grafiki')
       .upload(`${folder}/${filename}`, file, { upsert: true });
 
-    if (uploadError) throw uploadError;
+    if (uploadError) {
+      console.error('Storage upload error:', uploadError);
+      throw uploadError;
+    }
 
     const { data, error: dbError } = await supabase
       .from('graphics')
@@ -67,7 +82,10 @@ export async function POST(request: NextRequest) {
       .select('id')
       .single();
 
-    if (dbError) throw dbError;
+    if (dbError) {
+      console.error('DB insert error:', dbError);
+      throw dbError;
+    }
 
     return NextResponse.json({ id: data.id });
   } catch (err) {
@@ -84,11 +102,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const anonClient = getAnonClient();
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
     if (authError || !user) {
       return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
     }
+
+    const supabase = getAuthClient(token);
 
     const { id } = await request.json();
 
@@ -99,14 +119,23 @@ export async function DELETE(request: NextRequest) {
       .single();
 
     if (graphic) {
-      await supabase.storage
+      const { error: storageError } = await supabase.storage
         .from('grafiki')
         .remove([`${graphic.folder}/${graphic.filename}`]);
 
-      await supabase
+      if (storageError) {
+        console.error('Storage delete error:', storageError);
+      }
+
+      const { error: dbError } = await supabase
         .from('graphics')
         .delete()
         .eq('id', id);
+
+      if (dbError) {
+        console.error('DB delete error:', dbError);
+        throw dbError;
+      }
     }
 
     return NextResponse.json({ success: true });
