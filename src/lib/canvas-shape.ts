@@ -114,6 +114,7 @@ export function applyShapeToCanvas(canvas: Canvas, shape: ShapeConfig) {
   const marginOverlay = createMarginOverlay();
   (marginOverlay as any).name = MARGIN_OVERLAY_ID;
   canvas.add(marginOverlay);
+  canvas.sendObjectToBack(marginOverlay);
 
   if (shape.type !== 'rectangle') {
     canvas.getObjects().forEach((obj) => {
@@ -126,6 +127,9 @@ export function applyShapeToCanvas(canvas: Canvas, shape: ShapeConfig) {
     if (overlay) {
       (overlay as any).name = SHAPE_OVERLAY_ID;
       canvas.add(overlay);
+      canvas.sendObjectToBack(overlay);
+      const mo = canvas.getObjects().find(o => (o as any).name === MARGIN_OVERLAY_ID);
+      if (mo) canvas.sendObjectToBack(mo);
     }
 
     const cutLine = createCutLine(shape);
