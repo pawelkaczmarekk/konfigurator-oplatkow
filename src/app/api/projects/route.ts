@@ -1,37 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { saveProject } from '@/lib/store';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { canvasJson, shape } = body;
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
 
-    if (!canvasJson || !shape) {
-      return NextResponse.json(
-        { error: 'Brak wymaganych danych' },
-        { status: 400 }
-      );
+    if (!token) {
+      return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 });
+    }
+
+    const supabaseServer = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
     }
 
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')
-        .insert({ canvas_json: canvasJson, shape })
-        .select('id')
-        .single();
+        .select('id, canvas_json, shape, created_at')
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return NextResponse.json({ id: data.id });
+
+      const projects = data.map((p: any) => ({
+        id: p.id,
+        shape: p.shape,
+        createdAt: p.created_at,
+      }));
+
+      return NextResponse.json(projects);
     }
 
-    const project = saveProject({ canvasJson, shape });
-    return NextResponse.json({ id: project.id });
+    return NextResponse.json([]);
   } catch (err) {
-    console.error('Błąd zapisu projektu:', err);
-    return NextResponse.json(
-      { error: 'Błąd zapisu projektu' },
-      { status: 500 }
-    );
+    console.error('Błąd pobierania projektów:', err);
+    return NextResponse.json({ error: 'Błąd pobierania projektów' }, { status: 500 });
   }
 }
