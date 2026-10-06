@@ -57,21 +57,26 @@ export default function ProjektPage() {
   useEffect(() => {
     if (!id || !user) return;
 
+    console.log('Pobieram projekt, id:', id, 'user:', user.email);
     supabase.auth.getSession().then(({ data: { session } }) => {
       const token = session?.access_token;
+      console.log('Token:', token ? 'mam' : 'brak');
 
       fetch(`/api/projects/${id}`, {
         headers: token ? { authorization: `Bearer ${token}` } : {},
       })
         .then((res) => {
+          console.log('Fetch status:', res.status);
           if (!res.ok) throw new Error('Nie znaleziono projektu');
           return res.json();
         })
         .then((data) => {
+          console.log('Dane projektu:', data);
           setProject(data);
           setLoading(false);
         })
         .catch((err) => {
+          console.error('Błąd pobierania:', err.message);
           setError(err.message);
           setLoading(false);
         });
