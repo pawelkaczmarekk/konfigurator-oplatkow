@@ -187,7 +187,10 @@ export default function PatternGallery({ canvas, isAdmin = false }: PatternGalle
           body: formData,
         });
 
-        if (!res.ok) throw new Error('Błąd wgrywania');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP ${res.status}`);
+        }
       }
 
       setUploadFiles([]);
