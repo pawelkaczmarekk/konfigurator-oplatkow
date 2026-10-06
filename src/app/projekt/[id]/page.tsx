@@ -109,7 +109,9 @@ export default function ProjektPage() {
     canvas.setZoom(scale);
 
     const json = JSON.parse(project.canvasJson);
+    console.log('Wczytuję canvas:', (json as any).objects?.length, 'obiektów');
     canvas.loadFromJSON(json).then(() => {
+      console.log('Canvas po loadFromJSON:', canvas.getObjects().length, 'obiektów');
       applyShapeToCanvas(canvas, project.shape);
       canvas.renderAll();
       canvasRef.current = canvas;
