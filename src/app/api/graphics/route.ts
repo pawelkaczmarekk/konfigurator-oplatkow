@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
-      throw uploadError;
+      return NextResponse.json({ error: `Storage: ${uploadError.message}` }, { status: 500 });
     }
 
     const { data, error: dbError } = await supabase
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error('DB insert error:', dbError);
-      throw dbError;
+      return NextResponse.json({ error: `DB: ${dbError.message}` }, { status: 500 });
     }
 
     return NextResponse.json({ id: data.id });
