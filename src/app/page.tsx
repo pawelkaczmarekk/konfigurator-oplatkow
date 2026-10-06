@@ -83,7 +83,7 @@ export default function Home() {
       <div className="flex-1 flex overflow-hidden">
         <aside className="w-64 bg-white border-r border-gray-200 overflow-y-auto p-4 space-y-1 shrink-0">
           <ShapeSelector shape={shape} onChange={setShape} />
-          <PatternGallery canvas={canvas} />
+          <PatternGallery canvas={canvas} isAdmin={false} />
           <ImageUploader canvas={canvas} />
           <TextTool canvas={canvas} />
           <div className="border-t border-gray-100 my-2" />

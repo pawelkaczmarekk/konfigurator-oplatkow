@@ -4,10 +4,10 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas, FabricImage } from 'fabric';
 import { A4_WIDTH_PX, A4_HEIGHT_PX, MARGIN_PX } from '@/types';
 import { supabase } from '@/lib/supabase-browser';
-import { isAllowedEmail } from '@/lib/auth-config';
 
 interface PatternGalleryProps {
   canvas: Canvas | null;
+  isAdmin?: boolean;
 }
 
 interface PatternItem {
@@ -55,14 +55,13 @@ function buildCategoryTree(folders: string[]): CategoryNode[] {
   return root;
 }
 
-export default function PatternGallery({ canvas }: PatternGalleryProps) {
+export default function PatternGallery({ canvas, isAdmin = false }: PatternGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [patterns, setPatterns] = useState<PatternItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadFolder, setUploadFolder] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
@@ -71,19 +70,6 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (!supabase) return;
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user?.email && isAllowedEmail(session.user.email)) {
-        setIsAdmin(true);
-      }
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAdmin(!!(session?.user?.email && isAllowedEmail(session.user.email)));
-    });
-    return () => subscription.unsubscribe();
-  }, []);
 
   const loadGraphics = useCallback(() => {
     setLoading(true);
@@ -233,6 +219,26 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
     }
   };
 
+  const handleDeleteFolder = async (folder: string) => {
+    const folderItems = patterns.filter(p => p.folder === folder);
+    if (folderItems.length === 0) return;
+    if (!confirm(`Usunąć folder "${folder}" i wszystkie jego grafiki (${folderItems.length})?`)) return;
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+      for (const item of folderItems) {
+        await fetch('/api/graphics', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+          body: JSON.stringify({ id: item.id }),
+        });
+      }
+      loadGraphics();
+    } catch (err) {
+      console.error('Błąd usuwania folderu:', err);
+    }
+  };
+
   const renderCategory = (node: CategoryNode, depth = 0) => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedCategories.has(node.key);
@@ -240,12 +246,8 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
 
     return (
       <div key={node.key}>
-        <button
-          onClick={() => {
-            if (hasChildren) toggleCategory(node.key);
-            setActiveCategory(node.key);
-          }}
-          className={`w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-1 ${
+        <div
+          className={`w-full flex items-center gap-1 px-4 py-2 text-sm transition-colors ${
             isActive
               ? 'bg-amber-50 text-amber-700 font-medium'
               : 'text-gray-600 hover:bg-gray-50'
@@ -253,16 +255,37 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
           style={{ paddingLeft: `${12 + depth * 12}px` }}
         >
           {hasChildren && (
-            <svg
-              className={`w-3 h-3 transition-transform shrink-0 ${isExpanded ? 'rotate-90' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor"
+            <button
+              onClick={() => toggleCategory(node.key)}
+              className="shrink-0"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+              <svg
+                className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
           )}
-          {!hasChildren && <span className="w-3" />}
-          {node.label}
-        </button>
+          {!hasChildren && <span className="w-3 shrink-0" />}
+          <button
+            onClick={() => setActiveCategory(node.key)}
+            className="flex-1 text-left"
+          >
+            {node.label}
+          </button>
+          {isAdmin && !hasChildren && (
+            <button
+              onClick={(e) => { e.stopPropagation(); handleDeleteFolder(node.key); }}
+              className="shrink-0 p-0.5 text-gray-300 hover:text-red-500 transition-colors"
+              title="Usuń folder"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+        </div>
         {hasChildren && isExpanded && node.children!.map((child) => renderCategory(child, depth + 1))}
       </div>
     );
@@ -333,7 +356,7 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
 
               <div className="flex-1 flex flex-col overflow-hidden">
                 {isAdmin && (
-                  <div className="px-4 pt-4 pb-2 border-b border-gray-100">
+                  <div className="px-4 pt-4 pb-3 border-b border-gray-100">
                     {uploadFiles.length === 0 ? (
                       <div
                         onDragOver={handleDragOver}
@@ -394,7 +417,7 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
                               </select>
                               <button
                                 onClick={() => setShowNewFolder(true)}
-                                className="px-3 py-1.5 text-xs text-amber-600 hover:text-amber-700 font-medium"
+                                className="px-3 py-1.5 text-xs text-amber-600 hover:text-amber-700 font-medium whitespace-nowrap"
                               >
                                 + Nowy folder
                               </button>
@@ -420,7 +443,7 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
                           <button
                             onClick={handleUpload}
                             disabled={uploading || (!showNewFolder ? !uploadFolder : !newFolderName.trim())}
-                            className="px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-40 text-sm font-medium transition-colors"
+                            className="px-4 py-1.5 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-40 text-sm font-medium transition-colors whitespace-nowrap"
                           >
                             {uploading ? 'Wgrywanie...' : 'Wgraj'}
                           </button>
@@ -468,7 +491,8 @@ export default function PatternGallery({ canvas }: PatternGalleryProps) {
                           {isAdmin && (
                             <button
                               onClick={(e) => { e.stopPropagation(); handleDelete(pattern.id); }}
-                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                              title="Usuń grafikę"
                             >
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
