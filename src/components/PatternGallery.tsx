@@ -652,11 +652,11 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                       <p className="text-sm">{activeTab === 'graphics' ? 'Brak grafik' : 'Brak szablonów'}</p>
                     </div>
                   ) : activeTab === 'graphics' ? (
-                    <div className="grid grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                       {filtered.map((pattern) => (
                         <div
                           key={pattern.id}
-                          className="group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-amber-400 hover:bg-amber-50 transition-all hover:shadow-md"
+                          className="group relative flex flex-col items-center gap-2 p-2 sm:p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-amber-400 hover:bg-amber-50 transition-all hover:shadow-md active:bg-amber-50"
                         >
                           <button onClick={() => addPattern(pattern as PatternItem)} className="w-full">
                             <div className="w-full aspect-square bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden">
@@ -679,7 +679,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                       ))}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
                       {filtered.map((template) => (
                         <div
                           key={template.id}
