@@ -238,6 +238,9 @@ export default function ProjektPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="bg-yellow-100 p-2 text-xs">
+        DEBUG: project={project ? 'yes' : 'null'}, loading={loading.toString()}, error={error}, user={user?.email}
+      </div>
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-gray-800">Podgląd projektu</h1>
