@@ -13,6 +13,7 @@ import { isAllowedEmail } from '@/lib/auth-config';
 export default function ProjektPage() {
   const params = useParams();
   const id = params?.id as string;
+  console.log('ProjektPage render, id:', id, 'params:', params);
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<Canvas | null>(null);
   const [loading, setLoading] = useState(true);
@@ -149,6 +150,8 @@ export default function ProjektPage() {
     const dataUrl = getCanvasDataUrl(canvasRef.current);
     await exportCanvasToPdf(dataUrl);
   };
+
+  console.log('Auth state: authLoading=', authLoading, 'user=', user?.email, 'accessDenied=', accessDenied);
 
   if (authLoading) {
     return (
