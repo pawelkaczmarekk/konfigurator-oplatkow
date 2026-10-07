@@ -96,7 +96,7 @@ export default function Home() {
         <SaveShareButton canvas={canvas} shape={shape} />
       </header>
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Left sidebar - desktop only */}
         <aside className="hidden md:block w-64 bg-white border-r border-gray-200 overflow-y-auto p-4 space-y-1 shrink-0">
           <ShapeSelector shape={shape} onChange={setShape} />
@@ -110,7 +110,7 @@ export default function Home() {
         </aside>
 
         {/* Canvas area - shared */}
-        <main className="flex-1 p-2 pb-24 md:pb-6 md:p-6 flex items-center justify-center overflow-auto relative" data-protected>
+        <main className="flex-1 p-2 md:p-6 flex items-center justify-center overflow-auto relative" data-protected>
           <div className="w-full h-full max-w-4xl max-h-[90vh]">
             <FabricCanvas onReady={handleCanvasReady} shape={shape} />
           </div>
@@ -124,15 +124,15 @@ export default function Home() {
         <aside className="hidden md:block w-56 bg-white border-l border-gray-200 overflow-hidden shrink-0">
           <LayersPanel canvas={canvas} />
         </aside>
-      </div>
 
-      {/* Mobile bottom bar */}
-      <MobileBottomBar
-        canvas={canvas}
-        activeTool={mobileTool}
-        onToolSelect={handleMobileToolSelect}
-        onCropMode={setCropMode}
-      />
+        {/* Mobile bottom bar - in flow */}
+        <MobileBottomBar
+          canvas={canvas}
+          activeTool={mobileTool}
+          onToolSelect={handleMobileToolSelect}
+          onCropMode={setCropMode}
+        />
+      </div>
 
       {/* Mobile bottom sheets */}
       <BottomSheet isOpen={mobileTool === 'shape'} onClose={() => setMobileTool(null)} title="Kształt opłatka">

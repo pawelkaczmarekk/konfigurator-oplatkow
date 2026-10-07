@@ -112,7 +112,7 @@ export default function MobileBottomBar({ canvas, activeTool, onToolSelect, onCr
   );
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 md:hidden" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <div className="md:hidden bg-white border-t border-gray-200 shrink-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="flex items-center justify-around px-1 py-1">
         {toolBtn('shape', 'Kształt',
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
