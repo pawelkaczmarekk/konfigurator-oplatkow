@@ -438,9 +438,11 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
         <div
           ref={overlayRef}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+          data-protected
           onClick={(e) => {
             if (e.target === overlayRef.current) handleClose();
           }}
+          onContextMenu={(e) => e.preventDefault()}
         >
           <div className="bg-white rounded-xl shadow-2xl w-[1100px] max-w-[95vw] h-[85vh] flex flex-col overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
@@ -659,8 +661,9 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                           className="group relative flex flex-col items-center gap-2 p-2 sm:p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-amber-400 hover:bg-amber-50 transition-all hover:shadow-md active:bg-amber-50"
                         >
                           <button onClick={() => addPattern(pattern as PatternItem)} className="w-full">
-                            <div className="w-full aspect-square bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden">
-                              <img src={(pattern as PatternItem).src} alt={pattern.name} className="w-full h-full object-cover" crossOrigin="anonymous" />
+                            <div className="w-full aspect-square bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden relative">
+                              <img src={(pattern as PatternItem).src} alt={pattern.name} className="w-full h-full object-cover" crossOrigin="anonymous" draggable={false} />
+                              <div className="absolute inset-0" />
                             </div>
                           </button>
                           <span className="text-xs text-gray-600 group-hover:text-amber-700 font-medium">{pattern.name}</span>
@@ -686,14 +689,15 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                           className="group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-purple-400 hover:bg-purple-50 transition-all hover:shadow-md"
                         >
                           <button onClick={() => loadTemplate(template as TemplateItem)} className="w-full">
-                            <div className="w-full aspect-[210/297] bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden">
+                            <div className="w-full aspect-[210/297] bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden relative">
                               {(template as TemplateItem).thumbnail ? (
-                                <img src={(template as TemplateItem).thumbnail!} alt={template.name} className="w-full h-full object-cover" />
+                                <img src={(template as TemplateItem).thumbnail!} alt={template.name} className="w-full h-full object-cover" draggable={false} />
                               ) : (
                                 <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                                 </svg>
                               )}
+                              <div className="absolute inset-0" />
                             </div>
                           </button>
                           <span className="text-xs text-gray-600 group-hover:text-purple-700 font-medium">{template.name}</span>
