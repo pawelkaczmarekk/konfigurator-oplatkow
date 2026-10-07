@@ -96,6 +96,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [uploadFiles, setUploadFiles] = useState<File[]>([]);
   const [newFolderInput, setNewFolderInput] = useState('');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showMobileCategories, setShowMobileCategories] = useState(false);
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -374,7 +375,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     }
   };
 
-  const renderCategory = (node: CategoryNode, depth = 0) => {
+  const renderCategory = (node: CategoryNode, depth = 0, mobile = false) => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedCategories.has(node.key);
     const isActive = activeCategory === node.key;
@@ -400,7 +401,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
             </button>
           )}
           {!hasChildren && <span className="w-3 shrink-0" />}
-          <button onClick={() => setActiveCategory(node.key)} className="flex-1 text-left">
+          <button onClick={() => { setActiveCategory(node.key); if (mobile) setShowMobileCategories(false); }} className="flex-1 text-left">
             {node.label}
           </button>
           {isAdmin && !hasChildren && (
@@ -496,8 +497,8 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
               </div>
             </div>
 
-            <div className="flex flex-1 overflow-hidden">
-              <nav className="w-52 border-r border-gray-100 py-2 shrink-0 overflow-y-auto">
+            <div className="flex flex-1 overflow-hidden relative">
+              <nav className="hidden md:block w-52 border-r border-gray-100 py-2 shrink-0 overflow-y-auto">
                 <button
                   onClick={() => setActiveCategory('all')}
                   className={`w-full text-left px-4 py-2 text-sm transition-colors ${
@@ -542,7 +543,50 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                 {categoryTree.map((cat) => renderCategory(cat))}
               </nav>
 
+              {showMobileCategories && (
+                <div className="md:hidden absolute inset-0 z-10 bg-white flex flex-col">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span className="text-sm font-semibold text-gray-700">Kategorie</span>
+                    <button onClick={() => setShowMobileCategories(false)} className="p-1 rounded-lg hover:bg-gray-100">
+                      <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="flex-1 overflow-y-auto py-1">
+                    <button
+                      onClick={() => { setActiveCategory('all'); setShowMobileCategories(false); }}
+                      className={`w-full text-left px-4 py-3 text-sm transition-colors ${
+                        activeCategory === 'all'
+                          ? 'bg-amber-50 text-amber-700 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      Wszystkie
+                    </button>
+                    {categoryTree.map((cat) => renderCategory(cat, 0, true))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex-1 flex flex-col overflow-hidden">
+                <div className="md:hidden px-4 pt-3 pb-2">
+                  <button
+                    onClick={() => setShowMobileCategories(true)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-amber-400 hover:bg-amber-50 transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
+                      </svg>
+                      {activeCategory === 'all' ? 'Wszystkie kategorie' : folderLabels[activeCategory] || activeCategory}
+                    </span>
+                    <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+
                 {isAdmin && activeTab === 'graphics' && (
                   <div className="px-4 pt-4 pb-3 border-b border-gray-100">
                     {uploadFiles.length === 0 ? (
