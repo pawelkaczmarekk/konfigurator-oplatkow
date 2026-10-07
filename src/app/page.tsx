@@ -110,7 +110,7 @@ export default function Home() {
         </aside>
 
         {/* Canvas area - shared */}
-        <main className="flex-1 p-2 md:p-6 flex items-center justify-center overflow-hidden relative" data-protected>
+        <main className="flex-1 p-2 pb-24 md:pb-6 md:p-6 flex items-center justify-center overflow-auto relative" data-protected>
           <div className="w-full h-full max-w-4xl max-h-[90vh]">
             <FabricCanvas onReady={handleCanvasReady} shape={shape} />
           </div>
