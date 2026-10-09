@@ -264,9 +264,19 @@ export default function ProjektPage() {
                 {project.source === 'baselinker' ? 'BaseLinker' : 'Oferta'}
               </span>
             )}
-            {project?.locked && (
-              <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded font-medium">
-                Zablokowany
+            {project?.status && (
+              <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                project.status === 'nowy' ? 'text-gray-700 bg-gray-100' :
+                project.status === 'gotowy' ? 'text-green-700 bg-green-50' :
+                project.status === 'w_realizacji' ? 'text-blue-700 bg-blue-50' :
+                project.status === 'anulowany' ? 'text-red-700 bg-red-50' :
+                'text-gray-700 bg-gray-100'
+              }`}>
+                {project.status === 'nowy' ? 'Nowy' :
+                 project.status === 'gotowy' ? 'Gotowy' :
+                 project.status === 'w_realizacji' ? 'W realizacji' :
+                 project.status === 'anulowany' ? 'Anulowany' :
+                 project.status}
               </span>
             )}
           </div>

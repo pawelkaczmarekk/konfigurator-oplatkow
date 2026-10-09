@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, canvas_json, shape, created_at, order_id, source, locked')
+        .select('id, canvas_json, shape, created_at, order_id, source, locked, status')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -37,6 +37,7 @@ export async function GET(request: NextRequest) {
         orderId: p.order_id,
         source: p.source,
         locked: p.locked,
+        status: p.status,
       }));
 
       return NextResponse.json(projects);
@@ -65,12 +66,12 @@ export async function POST(request: NextRequest) {
     if (orderId) {
       const { data: existing } = await supabase
         .from('projects')
-        .select('id, locked')
+        .select('id, locked, status')
         .eq('order_id', orderId)
         .single();
 
       if (existing) {
-        return NextResponse.json({ id: existing.id, locked: existing.locked, exists: true });
+        return NextResponse.json({ id: existing.id, locked: existing.locked, status: existing.status, exists: true });
       }
     }
 
@@ -78,6 +79,7 @@ export async function POST(request: NextRequest) {
       canvas_json: canvasJson || '{}',
       shape: shape || { type: 'rectangle' },
       source: source || 'oferta',
+      status: 'nowy',
     };
 
     if (orderId) {

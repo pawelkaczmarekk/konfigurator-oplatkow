@@ -12,7 +12,7 @@ export async function GET(
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, canvas_json, shape, created_at, order_id, source, locked')
+        .select('id, canvas_json, shape, created_at, order_id, source, locked, status')
         .eq('id', id)
         .single();
 
@@ -29,6 +29,7 @@ export async function GET(
         orderId: data.order_id,
         source: data.source,
         locked: data.locked,
+        status: data.status,
       });
     }
 
@@ -70,17 +71,18 @@ export async function PATCH(
     if (body.canvasJson !== undefined) updateData.canvas_json = body.canvasJson;
     if (body.shape !== undefined) updateData.shape = body.shape;
     if (body.locked !== undefined) updateData.locked = body.locked;
+    if (body.status !== undefined) updateData.status = body.status;
 
     const { data, error } = await supabase
       .from('projects')
       .update(updateData)
       .eq('id', id)
-      .select('id, locked')
+      .select('id, locked, status')
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ id: data.id, locked: data.locked });
+    return NextResponse.json({ id: data.id, locked: data.locked, status: data.status });
   } catch (err) {
     console.error('Błąd aktualizacji projektu:', err);
     return NextResponse.json({ error: 'Błąd aktualizacji projektu' }, { status: 500 });
