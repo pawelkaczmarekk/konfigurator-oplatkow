@@ -145,7 +145,7 @@ export default function AdminProjectsPage() {
     let result = projects;
 
     if (search.trim()) {
-      const q = extractId(search).toLowerCase();
+      const q = extractId(search).replace(/^#/, '').toLowerCase();
       result = result.filter((p) =>
         p.id.toLowerCase().includes(q) ||
         (p.orderId && p.orderId.toLowerCase().includes(q))
