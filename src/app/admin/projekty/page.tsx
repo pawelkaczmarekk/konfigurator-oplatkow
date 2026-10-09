@@ -9,6 +9,9 @@ interface Project {
   id: string;
   shape: any;
   createdAt: string;
+  orderId: string | null;
+  source: string;
+  locked: boolean;
 }
 
 function extractId(input: string): string {
@@ -67,7 +70,10 @@ export default function AdminProjectsPage() {
   const filtered = useMemo(() => {
     if (!search.trim()) return projects;
     const q = extractId(search).toLowerCase();
-    return projects.filter((p) => p.id.toLowerCase().includes(q));
+    return projects.filter((p) =>
+      p.id.toLowerCase().includes(q) ||
+      (p.orderId && p.orderId.toLowerCase().includes(q))
+    );
   }, [projects, search]);
 
   if (authLoading) {
@@ -116,7 +122,7 @@ export default function AdminProjectsPage() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Szukaj po ID lub wklej link do projektu..."
+            placeholder="Szukaj po ID, zamówieniu lub linku..."
             className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
           />
         </div>
@@ -131,39 +137,69 @@ export default function AdminProjectsPage() {
           </div>
         ) : (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID projektu</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Link</th>
-                  <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Utworzono</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((project) => (
-                  <tr key={project.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">{project.id}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <a
-                        href={`${window.location.origin}/projekt/${project.id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-amber-600 hover:text-amber-700 hover:underline font-medium"
-                      >
-                        Otwórz projekt
-                      </a>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs text-gray-500">
-                        {new Date(project.createdAt).toLocaleString('pl-PL')}
-                      </span>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50">
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Zamówienie</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Źródło</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Link</th>
+                    <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Utworzono</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filtered.map((project) => (
+                    <tr key={project.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">{project.id.slice(0, 8)}...</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {project.orderId ? (
+                          <span className="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded font-medium">#{project.orderId}</span>
+                        ) : (
+                          <span className="text-xs text-gray-300">—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${
+                          project.source === 'baselinker'
+                            ? 'text-blue-700 bg-blue-50'
+                            : 'text-gray-600 bg-gray-100'
+                        }`}>
+                          {project.source === 'baselinker' ? 'BaseLinker' : 'Oferta'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`text-xs px-2 py-1 rounded font-medium ${
+                          project.locked
+                            ? 'text-red-700 bg-red-50'
+                            : 'text-green-700 bg-green-50'
+                        }`}>
+                          {project.locked ? 'Zablokowany' : 'Edycja'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={`${window.location.origin}/projekt/${project.id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-amber-600 hover:text-amber-700 hover:underline font-medium"
+                        >
+                          Otwórz
+                        </a>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-xs text-gray-500">
+                          {new Date(project.createdAt).toLocaleString('pl-PL')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

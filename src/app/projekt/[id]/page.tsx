@@ -16,7 +16,7 @@ export default function ProjektPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<Canvas | null>(null);
   const [loading, setLoading] = useState(true);
-  const [project, setProject] = useState<ProjectData | null>(null);
+  const [project, setProject] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -55,32 +55,26 @@ export default function ProjektPage() {
   }, []);
 
   useEffect(() => {
-    if (!id || !user) return;
+    if (!id) return;
 
-    console.log('Pobieram projekt, id:', id, 'user:', user.email);
-    supabase!.auth.getSession().then(({ data: { session } }) => {
-      const token = session?.access_token;
-
-      fetch(`/api/projects/${id}`, {
-        headers: token ? { authorization: `Bearer ${token}` } : {},
+    fetch(`/api/projects/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error('Nie znaleziono projektu');
+        return res.json();
       })
-        .then((res) => {
-          if (!res.ok) throw new Error('Nie znaleziono projektu');
-          return res.json();
-        })
-        .then((data) => {
-          setProject(data);
-          setLoading(false);
-        })
-        .catch((err) => {
-          setError(err.message);
-          setLoading(false);
-        });
-    });
-  }, [id, user]);
+      .then((data) => {
+        setProject(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  }, [id]);
 
   useEffect(() => {
     if (!project || !containerRef.current) return;
+    if (project.locked && !user) return;
 
     const container = containerRef.current;
     const containerWidth = container.clientWidth;
@@ -120,7 +114,7 @@ export default function ProjektPage() {
       canvas.dispose();
       if (container.contains(el)) container.removeChild(el);
     };
-  }, [project]);
+  }, [project, user]);
 
   const handleLogin = async () => {
     setLoggingIn(true);
@@ -145,6 +139,49 @@ export default function ProjektPage() {
     const dataUrl = getCanvasDataUrl(canvasRef.current);
     await exportCanvasToPdf(dataUrl);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4" />
+          <p className="text-gray-600">Ładowanie projektu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <svg className="mx-auto h-16 w-16 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+          </svg>
+          <h2 className="text-xl font-semibold text-gray-800 mb-2">Nie znaleziono projektu</h2>
+          <p className="text-gray-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (project.locked && !user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center p-6">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-3">Projekt został zapisany</h1>
+          <p className="text-gray-500 text-sm">
+            Ten projekt został już przesłany do realizacji.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (authLoading) {
     return (
@@ -204,39 +241,35 @@ export default function ProjektPage() {
     );
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-600 mx-auto mb-4" />
-          <p className="text-gray-600">Ładowanie projektu...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <svg className="mx-auto h-16 w-16 text-red-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
-          </svg>
-          <h2 className="text-xl font-semibold text-gray-800 mb-2">Nie znaleziono projektu</h2>
-          <p className="text-gray-500">{error}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
         <div>
           <h1 className="text-lg font-semibold text-gray-800">Podgląd projektu</h1>
-          <p className="text-xs text-gray-500">
-            Utworzono: {project?.createdAt ? new Date(project.createdAt).toLocaleString('pl-PL') : ''}
-          </p>
+          <div className="flex items-center gap-3 mt-0.5">
+            <p className="text-xs text-gray-500">
+              Utworzono: {project?.createdAt ? new Date(project.createdAt).toLocaleString('pl-PL') : ''}
+            </p>
+            {project?.orderId && (
+              <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium">
+                Zamówienie #{project.orderId}
+              </span>
+            )}
+            {project?.source && (
+              <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                project.source === 'baselinker'
+                  ? 'text-blue-700 bg-blue-50'
+                  : 'text-gray-600 bg-gray-100'
+              }`}>
+                {project.source === 'baselinker' ? 'BaseLinker' : 'Oferta'}
+              </span>
+            )}
+            {project?.locked && (
+              <span className="text-xs text-red-700 bg-red-50 px-2 py-0.5 rounded font-medium">
+                Zablokowany
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <span className="text-xs text-gray-500">{user.email}</span>

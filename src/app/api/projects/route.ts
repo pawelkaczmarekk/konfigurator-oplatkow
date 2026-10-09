@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, canvas_json, shape, created_at')
+        .select('id, canvas_json, shape, created_at, order_id, source, locked')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -34,6 +34,9 @@ export async function GET(request: NextRequest) {
         id: p.id,
         shape: p.shape,
         createdAt: p.created_at,
+        orderId: p.order_id,
+        source: p.source,
+        locked: p.locked,
       }));
 
       return NextResponse.json(projects);
@@ -49,22 +52,41 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { canvasJson, shape } = body;
+    const { canvasJson, shape, orderId, source } = body;
 
-    if (!canvasJson) {
-      return NextResponse.json({ error: 'Brak danych canvas' }, { status: 400 });
+    if (!canvasJson && !orderId) {
+      return NextResponse.json({ error: 'Brak danych' }, { status: 400 });
     }
 
     if (!isSupabaseConfigured || !supabase) {
       return NextResponse.json({ error: 'Baza niedostępna' }, { status: 503 });
     }
 
+    if (orderId) {
+      const { data: existing } = await supabase
+        .from('projects')
+        .select('id, locked')
+        .eq('order_id', orderId)
+        .single();
+
+      if (existing) {
+        return NextResponse.json({ id: existing.id, locked: existing.locked, exists: true });
+      }
+    }
+
+    const insertData: any = {
+      canvas_json: canvasJson || '{}',
+      shape: shape || { type: 'rectangle' },
+      source: source || 'oferta',
+    };
+
+    if (orderId) {
+      insertData.order_id = orderId;
+    }
+
     const { data, error } = await supabase
       .from('projects')
-      .insert({
-        canvas_json: canvasJson,
-        shape: shape || { type: 'rectangle' },
-      })
+      .insert(insertData)
       .select('id')
       .single();
 
