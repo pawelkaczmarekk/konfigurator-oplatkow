@@ -312,7 +312,7 @@ export default function AdminProjectsPage() {
                     return (
                       <tr key={project.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
-                          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">{project.id.slice(0, 8)}...</span>
+                          <span className="text-xs font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded">{project.id.slice(0, 11)}</span>
                         </td>
                         <td className="px-4 py-3">
                           {project.orderId ? (
