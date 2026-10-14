@@ -2,14 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { Canvas } from 'fabric';
-import { A4_WIDTH_PX, A4_HEIGHT_PX, A4_WIDTH_MM, A4_HEIGHT_MM } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX, CARD_WIDTH_MM, CARD_HEIGHT_MM } from '@/types';
 
 interface ObjectDimensionsProps {
   canvas: Canvas | null;
 }
 
-const PX_TO_MM_X = A4_WIDTH_MM / A4_WIDTH_PX;
-const PX_TO_MM_Y = A4_HEIGHT_MM / A4_HEIGHT_PX;
+const PX_TO_MM_X = CARD_WIDTH_MM / CARD_WIDTH_PX;
+const PX_TO_MM_Y = CARD_HEIGHT_MM / CARD_HEIGHT_PX;
 
 interface Dimensions {
   widthCm: number;

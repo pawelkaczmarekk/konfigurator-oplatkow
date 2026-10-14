@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from 'react';
 import { Canvas, FabricImage, loadSVGFromString, Group } from 'fabric';
-import { A4_WIDTH_PX, A4_HEIGHT_PX } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX } from '@/types';
 import SidebarSection from './SidebarSection';
 
 interface ImageUploaderProps {
@@ -24,13 +24,13 @@ export default function ImageUploader({ canvas }: ImageUploaderProps) {
         try {
           const img = await FabricImage.fromURL(dataUrl);
 
-          const maxW = A4_WIDTH_PX * 0.5;
-          const maxH = A4_HEIGHT_PX * 0.5;
+          const maxW = CARD_WIDTH_PX * 0.5;
+          const maxH = CARD_HEIGHT_PX * 0.5;
           const scale = Math.min(maxW / (img.width || 1), maxH / (img.height || 1), 1);
 
           img.set({
-            left: A4_WIDTH_PX / 2 - ((img.width || 0) * scale) / 2,
-            top: A4_HEIGHT_PX / 2 - ((img.height || 0) * scale) / 2,
+            left: CARD_WIDTH_PX / 2 - ((img.width || 0) * scale) / 2,
+            top: CARD_HEIGHT_PX / 2 - ((img.height || 0) * scale) / 2,
             scaleX: scale,
             scaleY: scale,
           });
@@ -64,12 +64,12 @@ export default function ImageUploader({ canvas }: ImageUploaderProps) {
 
           const group = new Group(objects, parsed.options);
 
-          const maxW = A4_WIDTH_PX * 0.6;
-          const maxH = A4_HEIGHT_PX * 0.6;
+          const maxW = CARD_WIDTH_PX * 0.6;
+          const maxH = CARD_HEIGHT_PX * 0.6;
           const scale = Math.min(maxW / (group.width || 1), maxH / (group.height || 1), 1);
 
-          const offsetX = A4_WIDTH_PX / 2 - ((group.width || 0) * scale) / 2;
-          const offsetY = A4_HEIGHT_PX / 2 - ((group.height || 0) * scale) / 2;
+          const offsetX = CARD_WIDTH_PX / 2 - ((group.width || 0) * scale) / 2;
+          const offsetY = CARD_HEIGHT_PX / 2 - ((group.height || 0) * scale) / 2;
 
           const items = group.getObjects();
           for (const obj of items) {

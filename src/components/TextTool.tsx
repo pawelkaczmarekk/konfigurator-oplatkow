@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Canvas, IText } from 'fabric';
-import { A4_WIDTH_PX, A4_HEIGHT_PX } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX } from '@/types';
 import SidebarSection from './SidebarSection';
 
 interface TextToolProps {
@@ -82,8 +82,8 @@ export default function TextTool({ canvas }: TextToolProps) {
     if (!canvas) return;
 
     const text = new IText('Wpisz tekst', {
-      left: A4_WIDTH_PX / 2 - 80,
-      top: A4_HEIGHT_PX / 2 - 20,
+      left: CARD_WIDTH_PX / 2 - 80,
+      top: CARD_HEIGHT_PX / 2 - 20,
       fontFamily: 'Arial',
       fontSize: 48,
       fill: '#000000',

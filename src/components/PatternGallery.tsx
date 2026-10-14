@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Canvas, FabricImage } from 'fabric';
-import { A4_WIDTH_PX, A4_HEIGHT_PX, MARGIN_PX, ShapeConfig } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX, MARGIN_SIDE_PX, ShapeConfig } from '@/types';
 import { supabase } from '@/lib/supabase-browser';
 import { applyShapeToCanvas } from '@/lib/canvas-shape';
 
@@ -140,11 +140,11 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     if (!canvas) return;
     try {
       const img = await FabricImage.fromURL(pattern.src, { crossOrigin: 'anonymous' });
-      const targetSize = Math.min(A4_WIDTH_PX - 2 * MARGIN_PX, A4_HEIGHT_PX - 2 * MARGIN_PX) * 0.6;
+      const targetSize = Math.min(CARD_WIDTH_PX - 2 * MARGIN_SIDE_PX, CARD_HEIGHT_PX - 2 * MARGIN_SIDE_PX) * 0.6;
       const scale = targetSize / Math.max(img.width || 1, img.height || 1);
       img.set({
-        left: A4_WIDTH_PX / 2 - ((img.width || 0) * scale) / 2,
-        top: A4_HEIGHT_PX / 2 - ((img.height || 0) * scale) / 2,
+        left: CARD_WIDTH_PX / 2 - ((img.width || 0) * scale) / 2,
+        top: CARD_HEIGHT_PX / 2 - ((img.height || 0) * scale) / 2,
         scaleX: scale,
         scaleY: scale,
       });

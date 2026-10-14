@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { Canvas } from 'fabric';
 import { User } from '@supabase/supabase-js';
-import { A4_WIDTH_PX, A4_HEIGHT_PX, ProjectData } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX, ProjectData } from '@/types';
 import { getCanvasDataUrl, exportCanvasToPdf } from '@/lib/pdf-export';
 import { applyShapeToCanvas } from '@/lib/canvas-shape';
 import { supabase } from '@/lib/supabase-browser';
@@ -80,12 +80,12 @@ export default function ProjektPage() {
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
-    const scaleX = containerWidth / A4_WIDTH_PX;
-    const scaleY = containerHeight / A4_HEIGHT_PX;
+    const scaleX = containerWidth / CARD_WIDTH_PX;
+    const scaleY = containerHeight / CARD_HEIGHT_PX;
     const scale = Math.min(scaleX, scaleY);
 
-    const canvasWidth = A4_WIDTH_PX * scale;
-    const canvasHeight = A4_HEIGHT_PX * scale;
+    const canvasWidth = CARD_WIDTH_PX * scale;
+    const canvasHeight = CARD_HEIGHT_PX * scale;
 
     const el = document.createElement('canvas');
     el.width = canvasWidth;

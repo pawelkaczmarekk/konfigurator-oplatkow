@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { Canvas, Rect, FabricImage } from 'fabric';
-import { A4_WIDTH_PX, A4_HEIGHT_PX } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX } from '@/types';
 
 interface CropToolProps {
   canvas: Canvas | null;
@@ -44,8 +44,8 @@ export default function CropTool({ canvas, mode, onDone }: CropToolProps) {
     const overlay = new Rect({
       left: 0,
       top: 0,
-      width: A4_WIDTH_PX,
-      height: A4_HEIGHT_PX,
+      width: CARD_WIDTH_PX,
+      height: CARD_HEIGHT_PX,
       fill: 'rgba(0,0,0,0.5)',
       selectable: false,
       evented: false,

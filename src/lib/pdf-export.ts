@@ -1,5 +1,5 @@
 import jsPDF from 'jspdf';
-import { A4_WIDTH_MM, A4_HEIGHT_MM, A4_WIDTH_PX, A4_HEIGHT_PX } from '@/types';
+import { CARD_WIDTH_MM, CARD_HEIGHT_MM, CARD_WIDTH_PX, CARD_HEIGHT_PX } from '@/types';
 
 export async function exportCanvasToPdf(
   canvasDataUrl: string
@@ -7,7 +7,7 @@ export async function exportCanvasToPdf(
   const pdf = new jsPDF({
     orientation: 'portrait',
     unit: 'mm',
-    format: [A4_WIDTH_MM, A4_HEIGHT_MM],
+    format: [CARD_WIDTH_MM, CARD_HEIGHT_MM],
   });
 
   pdf.addImage(
@@ -15,8 +15,8 @@ export async function exportCanvasToPdf(
     'PNG',
     0,
     0,
-    A4_WIDTH_MM,
-    A4_HEIGHT_MM
+    CARD_WIDTH_MM,
+    CARD_HEIGHT_MM
   );
 
   pdf.save('oplatek.pdf');
@@ -43,8 +43,8 @@ export function getCanvasDataUrl(
     multiplier: 300 / 96,
     left: 0,
     top: 0,
-    width: A4_WIDTH_PX,
-    height: A4_HEIGHT_PX,
+    width: CARD_WIDTH_PX,
+    height: CARD_HEIGHT_PX,
   });
 
   objectsToHide.forEach((obj) => {

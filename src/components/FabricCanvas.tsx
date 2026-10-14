@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { Canvas, Rect } from 'fabric';
-import { A4_WIDTH_PX, A4_HEIGHT_PX, ShapeConfig } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX, ShapeConfig } from '@/types';
 import { applyShapeToCanvas, applyClipPathToObject } from '@/lib/canvas-shape';
 
 interface FabricCanvasProps {
@@ -25,12 +25,12 @@ export default function FabricCanvas({ onReady, shape }: FabricCanvasProps) {
     const containerWidth = container.clientWidth;
     const containerHeight = container.clientHeight;
 
-    const scaleX = containerWidth / A4_WIDTH_PX;
-    const scaleY = containerHeight / A4_HEIGHT_PX;
+    const scaleX = containerWidth / CARD_WIDTH_PX;
+    const scaleY = containerHeight / CARD_HEIGHT_PX;
     const scale = Math.min(scaleX, scaleY);
 
-    const canvasWidth = A4_WIDTH_PX * scale;
-    const canvasHeight = A4_HEIGHT_PX * scale;
+    const canvasWidth = CARD_WIDTH_PX * scale;
+    const canvasHeight = CARD_HEIGHT_PX * scale;
 
     const el = document.createElement('canvas');
     el.width = canvasWidth;
@@ -51,8 +51,8 @@ export default function FabricCanvas({ onReady, shape }: FabricCanvasProps) {
     const bg = new Rect({
       left: 0,
       top: 0,
-      width: A4_WIDTH_PX,
-      height: A4_HEIGHT_PX,
+      width: CARD_WIDTH_PX,
+      height: CARD_HEIGHT_PX,
       fill: '#ffffff',
       selectable: false,
       evented: false,

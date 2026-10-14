@@ -1,5 +1,5 @@
 import { Canvas, Rect, Circle, FabricObject } from 'fabric';
-import { A4_WIDTH_PX, A4_HEIGHT_PX, MARGIN_PX, CONTENT_WIDTH_PX, CONTENT_HEIGHT_PX, ShapeConfig } from '@/types';
+import { CARD_WIDTH_PX, CARD_HEIGHT_PX, MARGIN_TOP_PX, MARGIN_SIDE_PX, CONTENT_WIDTH_PX, CONTENT_HEIGHT_PX, ShapeConfig } from '@/types';
 
 const SHAPE_OVERLAY_ID = '__shape_overlay__';
 const CUT_LINE_ID = '__cut_line__';
@@ -9,11 +9,11 @@ export const SYSTEM_OBJECTS = new Set(['__a4_background__', SHAPE_OVERLAY_ID, CU
 function createShapeClipPath(shape: ShapeConfig): Circle | undefined {
   if (shape.type === 'rectangle') return undefined;
 
-  const diameter = (shape.diameter ?? 200) * (A4_WIDTH_PX / 210);
+  const diameter = (shape.diameter ?? 200) * (CARD_WIDTH_PX / 204);
   const radius = diameter / 2;
   return new Circle({
-    left: A4_WIDTH_PX / 2 - radius,
-    top: A4_HEIGHT_PX / 2 - radius,
+    left: CARD_WIDTH_PX / 2 - radius,
+    top: CARD_HEIGHT_PX / 2 - radius,
     radius,
     absolutePositioned: true,
   });
@@ -21,8 +21,8 @@ function createShapeClipPath(shape: ShapeConfig): Circle | undefined {
 
 function createMarginClipPath(): Rect {
   return new Rect({
-    left: MARGIN_PX,
-    top: MARGIN_PX,
+    left: MARGIN_SIDE_PX,
+    top: MARGIN_TOP_PX,
     width: CONTENT_WIDTH_PX,
     height: CONTENT_HEIGHT_PX,
     absolutePositioned: true,
@@ -34,8 +34,8 @@ function createMarginOverlay(): Rect {
   const overlay = new Rect({
     left: 0,
     top: 0,
-    width: A4_WIDTH_PX,
-    height: A4_HEIGHT_PX,
+    width: CARD_WIDTH_PX,
+    height: CARD_HEIGHT_PX,
     fill: 'rgba(0, 0, 0, 0.15)',
     selectable: false,
     evented: false,
@@ -55,8 +55,8 @@ function createShapeOverlay(shape: ShapeConfig): Rect | undefined {
   const overlay = new Rect({
     left: 0,
     top: 0,
-    width: A4_WIDTH_PX,
-    height: A4_HEIGHT_PX,
+    width: CARD_WIDTH_PX,
+    height: CARD_HEIGHT_PX,
     fill: 'rgba(0, 0, 0, 0.35)',
     selectable: false,
     evented: false,
@@ -72,13 +72,13 @@ function createShapeOverlay(shape: ShapeConfig): Rect | undefined {
 function createCutLine(shape: ShapeConfig): Circle | undefined {
   if (shape.type === 'rectangle' || !shape.showCutLine) return undefined;
 
-  const diameter = (shape.diameter ?? 200) * (A4_WIDTH_PX / 210);
-  const cutDiameter = diameter + 2 * (A4_WIDTH_PX / 210) * 0.5;
+  const diameter = (shape.diameter ?? 200) * (CARD_WIDTH_PX / 204);
+  const cutDiameter = diameter + 2 * (CARD_WIDTH_PX / 204) * 0.5;
   const radius = cutDiameter / 2;
 
   return new Circle({
-    left: A4_WIDTH_PX / 2 - radius,
-    top: A4_HEIGHT_PX / 2 - radius,
+    left: CARD_WIDTH_PX / 2 - radius,
+    top: CARD_HEIGHT_PX / 2 - radius,
     radius,
     fill: 'transparent',
     stroke: '#cccccc',
