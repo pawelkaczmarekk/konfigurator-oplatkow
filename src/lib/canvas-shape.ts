@@ -9,7 +9,7 @@ export const SYSTEM_OBJECTS = new Set(['__a4_background__', SHAPE_OVERLAY_ID, CU
 function createShapeClipPath(shape: ShapeConfig): Circle | undefined {
   if (shape.type === 'rectangle') return undefined;
 
-  const diameter = (shape.diameter ?? 200) * (CARD_WIDTH_PX / 204);
+  const diameter = (shape.diameter ?? 200) * (CARD_WIDTH_PX / 210);
   const radius = diameter / 2;
   return new Circle({
     left: CARD_WIDTH_PX / 2 - radius,
@@ -72,8 +72,8 @@ function createShapeOverlay(shape: ShapeConfig): Rect | undefined {
 function createCutLine(shape: ShapeConfig): Circle | undefined {
   if (shape.type === 'rectangle' || !shape.showCutLine) return undefined;
 
-  const diameter = (shape.diameter ?? 200) * (CARD_WIDTH_PX / 204);
-  const cutDiameter = diameter + 2 * (CARD_WIDTH_PX / 204) * 0.5;
+  const diameter = (shape.diameter ?? 200) * (CARD_WIDTH_PX / 210);
+  const cutDiameter = diameter + 2 * (CARD_WIDTH_PX / 210) * 0.5;
   const radius = cutDiameter / 2;
 
   return new Circle({

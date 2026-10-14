@@ -148,7 +148,7 @@ export default function AdminPage() {
             Admin
           </span>
           <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded">
-            204 × 283 mm, margines góra 11 mm, boki/dół 3 mm
+            A4 (210 × 297 mm, margines góra 11 mm, boki/dół 3 mm)
           </span>
         </div>
         <Toolbar canvas={canvas} onCropMode={setCropMode} />
