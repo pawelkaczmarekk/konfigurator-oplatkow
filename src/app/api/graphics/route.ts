@@ -19,7 +19,7 @@ export async function GET() {
     const supabase = getAnonClient();
     const { data, error } = await supabase
       .from('graphics')
-      .select('id, name, folder, filename, created_at')
+      .select('id, name, folder, filename, tags, created_at')
       .order('folder', { ascending: true });
 
     if (error) throw error;
@@ -29,6 +29,7 @@ export async function GET() {
       name: g.name,
       folder: g.folder,
       filename: g.filename,
+      tags: g.tags || [],
       src: `${supabaseUrl}/storage/v1/object/public/grafiki/${g.folder}/${g.filename}`,
       createdAt: g.created_at,
     }));
@@ -60,10 +61,15 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
     const folder = formData.get('folder') as string;
+    const tagsRaw = formData.get('tags') as string | null;
 
     if (!file || !name || !folder) {
       return NextResponse.json({ error: 'Brak wymaganych danych' }, { status: 400 });
     }
+
+    const tags = tagsRaw
+      ? tagsRaw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
+      : [];
 
     const filename = file.name;
 
@@ -78,7 +84,7 @@ export async function POST(request: NextRequest) {
 
     const { data, error: dbError } = await supabase
       .from('graphics')
-      .insert({ name, folder, filename })
+      .insert({ name, folder, filename, tags })
       .select('id')
       .single();
 
@@ -91,6 +97,45 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     console.error('Błąd wgrywania grafiki:', err);
     return NextResponse.json({ error: 'Błąd wgrywania grafiki' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 });
+    }
+
+    const anonClient = getAnonClient();
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
+    }
+
+    const supabase = getAuthClient(token);
+
+    const { id, name, tags } = await request.json();
+    if (!id) {
+      return NextResponse.json({ error: 'Brak ID' }, { status: 400 });
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (tags !== undefined) updateData.tags = tags.map((t: string) => t.trim().toLowerCase()).filter(Boolean);
+
+    const { error } = await supabase
+      .from('graphics')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Błąd aktualizacji grafiki:', err);
+    return NextResponse.json({ error: 'Błąd aktualizacji grafiki' }, { status: 500 });
   }
 }
 

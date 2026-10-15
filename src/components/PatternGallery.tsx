@@ -21,6 +21,7 @@ interface PatternItem {
   name: string;
   src: string;
   folder: string;
+  tags: string[];
 }
 
 interface TemplateItem {
@@ -97,6 +98,9 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [newFolderInput, setNewFolderInput] = useState('');
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showMobileCategories, setShowMobileCategories] = useState(false);
+  const [uploadTags, setUploadTags] = useState('');
+  const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
+  const [editingTagsValue, setEditingTagsValue] = useState('');
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -132,7 +136,8 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
 
   const filtered = (activeTab === 'graphics' ? patterns : templates).filter((p) => {
     const matchCat = activeCategory === 'all' || p.folder === activeCategory || p.folder.startsWith(activeCategory + ' ');
-    const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchSearch = !search || p.name.toLowerCase().includes(q) || ('tags' in p && (p as PatternItem).tags.some((t) => t.includes(q)));
     return matchCat && matchSearch;
   });
 
@@ -244,6 +249,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
         formData.append('file', file);
         formData.append('name', name);
         formData.append('folder', folder);
+        if (uploadTags.trim()) formData.append('tags', uploadTags.trim());
 
         const res = await fetch('/api/graphics', {
           method: 'POST',
@@ -261,6 +267,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       setUploadFolder('');
       setNewFolderName('');
       setShowNewFolder(false);
+      setUploadTags('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       loadGraphics();
     } catch (err) {
@@ -283,6 +290,23 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       loadGraphics();
     } catch (err) {
       console.error('Błąd usuwania:', err);
+    }
+  };
+
+  const handleUpdateTags = async (id: string, tags: string[]) => {
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+      await fetch('/api/graphics', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id, tags }),
+      });
+      setEditingTagsId(null);
+      setEditingTagsValue('');
+      loadGraphics();
+    } catch (err) {
+      console.error('Błąd aktualizacji tagów:', err);
     }
   };
 
@@ -680,6 +704,15 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                             {uploading ? 'Wgrywanie...' : 'Wgraj'}
                           </button>
                         </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <input
+                            type="text"
+                            placeholder="Tagi (oddzielone przecinkami)"
+                            value={uploadTags}
+                            onChange={(e) => setUploadTags(e.target.value)}
+                            className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
@@ -699,31 +732,81 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                     </div>
                   ) : activeTab === 'graphics' ? (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                      {filtered.map((pattern) => (
-                        <div
-                          key={pattern.id}
-                          className="group relative flex flex-col items-center gap-2 p-2 sm:p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-amber-400 hover:bg-amber-50 transition-all hover:shadow-md active:bg-amber-50"
-                        >
-                          <button onClick={() => addPattern(pattern as PatternItem)} className="w-full">
-                            <div className="w-full aspect-square bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden relative">
-                              <img src={(pattern as PatternItem).src} alt={pattern.name} className="w-full h-full object-cover" crossOrigin="anonymous" draggable={false} />
-                              <div className="absolute inset-0" />
-                            </div>
-                          </button>
-                          <span className="text-xs text-gray-600 group-hover:text-amber-700 font-medium">{pattern.name}</span>
-                          {isAdmin && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDelete(pattern.id); }}
-                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                              title="Usuń grafikę"
-                            >
-                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
+                      {filtered.map((pattern) => {
+                        const p = pattern as PatternItem;
+                        const isEditingTags = editingTagsId === p.id;
+                        return (
+                          <div
+                            key={pattern.id}
+                            className="group relative flex flex-col items-center gap-2 p-2 sm:p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-amber-400 hover:bg-amber-50 transition-all hover:shadow-md active:bg-amber-50"
+                          >
+                            <button onClick={() => addPattern(p)} className="w-full">
+                              <div className="w-full aspect-square bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden relative">
+                                <img src={p.src} alt={pattern.name} className="w-full h-full object-cover" crossOrigin="anonymous" draggable={false} />
+                                <div className="absolute inset-0" />
+                              </div>
                             </button>
-                          )}
-                        </div>
-                      ))}
+                            <span className="text-xs text-gray-600 group-hover:text-amber-700 font-medium">{pattern.name}</span>
+                            {p.tags && p.tags.length > 0 && !isEditingTags && (
+                              <div className="flex flex-wrap gap-1 w-full">
+                                {p.tags.map((tag) => (
+                                  <span key={tag} className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                            {isAdmin && !isEditingTags && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditingTagsId(p.id); setEditingTagsValue(p.tags?.join(', ') || ''); }}
+                                className="text-[10px] text-gray-400 hover:text-amber-600 transition-colors"
+                              >
+                                Edytuj tagi
+                              </button>
+                            )}
+                            {isAdmin && isEditingTags && (
+                              <div className="w-full flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={editingTagsValue}
+                                  onChange={(e) => setEditingTagsValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateTags(p.id, editingTagsValue.split(',').map((t) => t.trim()).filter(Boolean));
+                                    if (e.key === 'Escape') { setEditingTagsId(null); setEditingTagsValue(''); }
+                                  }}
+                                  className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleUpdateTags(p.id, editingTagsValue.split(',').map((t) => t.trim()).filter(Boolean))}
+                                  className="p-1 text-green-600 hover:text-green-700 shrink-0"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => { setEditingTagsId(null); setEditingTagsValue(''); }}
+                                  className="p-1 text-gray-400 hover:text-gray-600 shrink-0"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDelete(pattern.id); }}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                title="Usuń grafikę"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
