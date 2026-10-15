@@ -19,7 +19,7 @@ export async function GET() {
     const supabase = getAnonClient();
     const { data, error } = await supabase
       .from('templates')
-      .select('id, name, folder, thumbnail, created_at')
+      .select('id, name, folder, thumbnail, tags, created_at')
       .order('folder', { ascending: true });
 
     if (error) throw error;
@@ -29,6 +29,7 @@ export async function GET() {
       name: t.name,
       folder: t.folder,
       thumbnail: t.thumbnail,
+      tags: t.tags || [],
       createdAt: t.created_at,
     }));
 
@@ -116,6 +117,48 @@ export async function DELETE(request: NextRequest) {
   } catch (err) {
     console.error('Błąd usuwania szablonu:', err);
     return NextResponse.json({ error: 'Błąd usuwania szablonu' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+    if (!token) {
+      return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 });
+    }
+
+    const anonClient = getAnonClient();
+    const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
+    }
+
+    const supabase = getAuthClient(token);
+
+    const { id, name, tags } = await request.json();
+    if (!id) {
+      return NextResponse.json({ error: 'Brak ID' }, { status: 400 });
+    }
+
+    const updateData: any = {};
+    if (name !== undefined) updateData.name = name;
+    if (tags !== undefined) updateData.tags = tags.map((t: string) => t.trim().toLowerCase()).filter(Boolean);
+
+    const { error } = await supabase
+      .from('templates')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) {
+      console.error('PATCH update error:', error);
+      return NextResponse.json({ error: `DB: ${error.message}` }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error('Błąd aktualizacji szablonu:', err);
+    return NextResponse.json({ error: 'Błąd aktualizacji szablonu' }, { status: 500 });
   }
 }
 

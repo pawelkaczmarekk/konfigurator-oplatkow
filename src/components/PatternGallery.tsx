@@ -29,6 +29,7 @@ interface TemplateItem {
   name: string;
   folder: string;
   thumbnail: string | null;
+  tags: string[];
   createdAt: string;
 }
 
@@ -137,7 +138,8 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const filtered = (activeTab === 'graphics' ? patterns : templates).filter((p) => {
     const matchCat = activeCategory === 'all' || p.folder === activeCategory || p.folder.startsWith(activeCategory + ' ');
     const q = search.toLowerCase();
-    const matchSearch = !search || p.name.toLowerCase().includes(q) || ('tags' in p && (p as PatternItem).tags.some((t) => t.includes(q)));
+    const tags = ('tags' in p) ? (p as PatternItem).tags : [];
+    const matchSearch = !search || p.name.toLowerCase().includes(q) || tags.some((t) => t.includes(q));
     return matchCat && matchSearch;
   });
 
@@ -307,6 +309,23 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       loadGraphics();
     } catch (err) {
       console.error('Błąd aktualizacji tagów:', err);
+    }
+  };
+
+  const handleUpdateTemplateTags = async (id: string, tags: string[]) => {
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+      await fetch('/api/templates', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id, tags }),
+      });
+      setEditingTagsId(null);
+      setEditingTagsValue('');
+      loadTemplates();
+    } catch (err) {
+      console.error('Błąd aktualizacji tagów szablonu:', err);
     }
   };
 
@@ -747,7 +766,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                               </div>
                             </button>
                             <span className="text-xs text-gray-600 group-hover:text-amber-700 font-medium">{pattern.name}</span>
-                            {p.tags && p.tags.length > 0 && !isEditingTags && (
+                            {isAdmin && p.tags && p.tags.length > 0 && !isEditingTags && (
                               <div className="flex flex-wrap gap-1 w-full">
                                 {p.tags.map((tag) => (
                                   <span key={tag} className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-[10px] font-medium">{tag}</span>
@@ -810,37 +829,87 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                     </div>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                      {filtered.map((template) => (
-                        <div
-                          key={template.id}
-                          className="group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-purple-400 hover:bg-purple-50 transition-all hover:shadow-md"
-                        >
-                          <button onClick={() => loadTemplate(template as TemplateItem)} className="w-full">
-                            <div className="w-full aspect-[210/297] bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden relative">
-                              {(template as TemplateItem).thumbnail ? (
-                                <img src={(template as TemplateItem).thumbnail!} alt={template.name} className="w-full h-full object-cover" draggable={false} />
-                              ) : (
-                                <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
-                                </svg>
-                              )}
-                              <div className="absolute inset-0" />
-                            </div>
-                          </button>
-                          <span className="text-xs text-gray-600 group-hover:text-purple-700 font-medium">{template.name}</span>
-                          {isAdmin && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}
-                              className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                              title="Usuń szablon"
-                            >
-                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
+                      {filtered.map((template) => {
+                        const t = template as TemplateItem;
+                        const isEditingTags = editingTagsId === t.id;
+                        return (
+                          <div
+                            key={template.id}
+                            className="group relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 border-gray-100 bg-white hover:border-purple-400 hover:bg-purple-50 transition-all hover:shadow-md"
+                          >
+                            <button onClick={() => loadTemplate(t)} className="w-full">
+                              <div className="w-full aspect-[210/297] bg-gray-50 rounded-lg flex items-center justify-center overflow-hidden relative">
+                                {t.thumbnail ? (
+                                  <img src={t.thumbnail!} alt={template.name} className="w-full h-full object-cover" draggable={false} />
+                                ) : (
+                                  <svg className="w-8 h-8 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+                                  </svg>
+                                )}
+                                <div className="absolute inset-0" />
+                              </div>
                             </button>
-                          )}
-                        </div>
-                      ))}
+                            <span className="text-xs text-gray-600 group-hover:text-purple-700 font-medium">{template.name}</span>
+                            {isAdmin && t.tags && t.tags.length > 0 && !isEditingTags && (
+                              <div className="flex flex-wrap gap-1 w-full">
+                                {t.tags.map((tag) => (
+                                  <span key={tag} className="px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-medium">{tag}</span>
+                                ))}
+                              </div>
+                            )}
+                            {isAdmin && !isEditingTags && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditingTagsId(t.id); setEditingTagsValue(t.tags?.join(', ') || ''); }}
+                                className="text-[10px] text-gray-400 hover:text-purple-600 transition-colors"
+                              >
+                                Edytuj tagi
+                              </button>
+                            )}
+                            {isAdmin && isEditingTags && (
+                              <div className="w-full flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={editingTagsValue}
+                                  onChange={(e) => setEditingTagsValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateTemplateTags(t.id, editingTagsValue.split(',').map((t) => t.trim()).filter(Boolean));
+                                    if (e.key === 'Escape') { setEditingTagsId(null); setEditingTagsValue(''); }
+                                  }}
+                                  className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-400"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleUpdateTemplateTags(t.id, editingTagsValue.split(',').map((t) => t.trim()).filter(Boolean))}
+                                  className="p-1 text-green-600 hover:text-green-700 shrink-0"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </button>
+                                <button
+                                  onClick={() => { setEditingTagsId(null); setEditingTagsValue(''); }}
+                                  className="p-1 text-gray-400 hover:text-gray-600 shrink-0"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDeleteTemplate(template.id); }}
+                                className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                title="Usuń szablon"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>

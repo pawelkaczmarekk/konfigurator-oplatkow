@@ -130,7 +130,10 @@ export async function PATCH(request: NextRequest) {
       .update(updateData)
       .eq('id', id);
 
-    if (error) throw error;
+    if (error) {
+      console.error('PATCH update error:', error);
+      return NextResponse.json({ error: `DB: ${error.message}` }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
