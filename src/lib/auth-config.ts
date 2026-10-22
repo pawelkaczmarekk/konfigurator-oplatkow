@@ -2,6 +2,7 @@ const ALLOWED_EMAILS = [
   'pawelkaczmarekk@gmail.com',
   'franciszkowskirobert@gmail.com',
   'cakedecor.pl@gmail.com',
+  'cakedecor.plewakrol@gmail.com',
 ] as const;
 
 export function isAllowedEmail(email: string): boolean {
