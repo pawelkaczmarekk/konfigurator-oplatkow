@@ -116,13 +116,45 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getAuthClient(token);
 
-    const { id, name, tags } = await request.json();
+    const { id, name, folder, tags, renameFolder, newFolderName } = await request.json();
+
+    if (renameFolder && newFolderName) {
+      const { data: items, error: fetchError } = await supabase
+        .from('graphics')
+        .select('id, folder, filename')
+        .eq('folder', renameFolder);
+
+      if (fetchError) {
+        console.error('Folder rename fetch error:', fetchError);
+        return NextResponse.json({ error: `DB: ${fetchError.message}` }, { status: 500 });
+      }
+
+      for (const item of (items || [])) {
+        const oldPath = `${item.folder}/${item.filename}`;
+        const newPath = `${newFolderName}/${item.filename}`;
+        await supabase.storage.from('grafiki').move(oldPath, newPath);
+      }
+
+      const { error: updateError } = await supabase
+        .from('graphics')
+        .update({ folder: newFolderName })
+        .eq('folder', renameFolder);
+
+      if (updateError) {
+        console.error('Folder rename update error:', updateError);
+        return NextResponse.json({ error: `DB: ${updateError.message}` }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
     if (!id) {
       return NextResponse.json({ error: 'Brak ID' }, { status: 400 });
     }
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
+    if (folder !== undefined) updateData.folder = folder;
     if (tags !== undefined) updateData.tags = tags.map((t: string) => t.trim().toLowerCase()).filter(Boolean);
 
     const { error } = await supabase

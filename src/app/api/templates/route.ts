@@ -136,13 +136,29 @@ export async function PATCH(request: NextRequest) {
 
     const supabase = getAuthClient(token);
 
-    const { id, name, tags } = await request.json();
+    const { id, name, folder, tags, renameFolder, newFolderName } = await request.json();
+
+    if (renameFolder && newFolderName) {
+      const { error: updateError } = await supabase
+        .from('templates')
+        .update({ folder: newFolderName })
+        .eq('folder', renameFolder);
+
+      if (updateError) {
+        console.error('Folder rename update error:', updateError);
+        return NextResponse.json({ error: `DB: ${updateError.message}` }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true });
+    }
+
     if (!id) {
       return NextResponse.json({ error: 'Brak ID' }, { status: 400 });
     }
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
+    if (folder !== undefined) updateData.folder = folder;
     if (tags !== undefined) updateData.tags = tags.map((t: string) => t.trim().toLowerCase()).filter(Boolean);
 
     const { error } = await supabase

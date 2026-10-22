@@ -102,6 +102,9 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [uploadTags, setUploadTags] = useState('');
   const [editingTagsId, setEditingTagsId] = useState<string | null>(null);
   const [editingTagsValue, setEditingTagsValue] = useState('');
+  const [renamingFolder, setRenamingFolder] = useState<string | null>(null);
+  const [renamingFolderValue, setRenamingFolderValue] = useState('');
+  const [movingGraphicId, setMovingGraphicId] = useState<string | null>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -329,6 +332,46 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     }
   };
 
+  const handleRenameFolder = async (oldName: string, newName: string) => {
+    if (!newName.trim() || newName.trim() === oldName) {
+      setRenamingFolder(null);
+      setRenamingFolderValue('');
+      return;
+    }
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+      const endpoint = activeTab === 'graphics' ? '/api/graphics' : '/api/templates';
+      await fetch(endpoint, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ renameFolder: oldName, newFolderName: newName.trim() }),
+      });
+      setRenamingFolder(null);
+      setRenamingFolderValue('');
+      if (activeTab === 'graphics') loadGraphics();
+      else loadTemplates();
+    } catch (err) {
+      console.error('Błąd zmiany nazwy folderu:', err);
+    }
+  };
+
+  const handleMoveGraphic = async (id: string, newFolder: string) => {
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+      await fetch('/api/graphics', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id, folder: newFolder }),
+      });
+      setMovingGraphicId(null);
+      loadGraphics();
+    } catch (err) {
+      console.error('Błąd przenoszenia grafiki:', err);
+    }
+  };
+
   const handleDeleteTemplate = async (id: string) => {
     if (!confirm('Usunąć ten szablon?')) return;
     try {
@@ -422,43 +465,81 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     const hasChildren = node.children && node.children.length > 0;
     const isExpanded = expandedCategories.has(node.key);
     const isActive = activeCategory === node.key;
+    const isRenaming = renamingFolder === node.key;
 
     return (
       <div key={node.key}>
-        <div
-          className={`w-full flex items-center gap-1 px-4 py-2 text-sm transition-colors ${
-            isActive
-              ? 'bg-amber-50 text-amber-700 font-medium'
-              : 'text-gray-600 hover:bg-gray-50'
-          }`}
-          style={{ paddingLeft: `${12 + depth * 12}px` }}
-        >
-          {hasChildren && (
-            <button onClick={() => toggleCategory(node.key)} className="shrink-0">
-              <svg
-                className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                fill="none" viewBox="0 0 24 24" stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
-          {!hasChildren && <span className="w-3 shrink-0" />}
-          <button onClick={() => { setActiveCategory(node.key); if (mobile) setShowMobileCategories(false); }} className="flex-1 text-left">
-            {node.label}
-          </button>
-          {isAdmin && !hasChildren && (
-            <button
-              onClick={(e) => { e.stopPropagation(); handleDeleteFolder(node.key); }}
-              className="shrink-0 p-0.5 text-gray-300 hover:text-red-500 transition-colors"
-              title="Usuń folder"
-            >
+        {isRenaming ? (
+          <div className="flex items-center gap-1 px-4 py-2" style={{ paddingLeft: `${12 + depth * 12}px` }}>
+            <input
+              type="text"
+              value={renamingFolderValue}
+              onChange={(e) => setRenamingFolderValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleRenameFolder(node.key, renamingFolderValue);
+                if (e.key === 'Escape') { setRenamingFolder(null); setRenamingFolderValue(''); }
+              }}
+              className="flex-1 min-w-0 px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+              autoFocus
+            />
+            <button onClick={() => handleRenameFolder(node.key, renamingFolderValue)} className="p-1 text-green-600 hover:text-green-700 shrink-0">
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </button>
-          )}
-        </div>
+            <button onClick={() => { setRenamingFolder(null); setRenamingFolderValue(''); }} className="p-1 text-gray-400 hover:text-gray-600 shrink-0">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <div
+            className={`w-full flex items-center gap-1 px-4 py-2 text-sm transition-colors ${
+              isActive
+                ? 'bg-amber-50 text-amber-700 font-medium'
+                : 'text-gray-600 hover:bg-gray-50'
+            }`}
+            style={{ paddingLeft: `${12 + depth * 12}px` }}
+          >
+            {hasChildren && (
+              <button onClick={() => toggleCategory(node.key)} className="shrink-0">
+                <svg
+                  className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            )}
+            {!hasChildren && <span className="w-3 shrink-0" />}
+            <button onClick={() => { setActiveCategory(node.key); if (mobile) setShowMobileCategories(false); }} className="flex-1 text-left">
+              {node.label}
+            </button>
+            {isAdmin && !hasChildren && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRenamingFolder(node.key); setRenamingFolderValue(node.key); }}
+                  className="shrink-0 p-0.5 text-gray-300 hover:text-amber-500 transition-colors"
+                  title="Zmień nazwę folderu"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDeleteFolder(node.key); }}
+                  className="shrink-0 p-0.5 text-gray-300 hover:text-red-500 transition-colors"
+                  title="Usuń folder"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </>
+            )}
+          </div>
+        )}
         {hasChildren && isExpanded && node.children!.map((child) => renderCategory(child, depth + 1))}
       </div>
     );
@@ -779,6 +860,32 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                                 className="text-[10px] text-gray-400 hover:text-amber-600 transition-colors"
                               >
                                 Edytuj tagi
+                              </button>
+                            )}
+                            {isAdmin && movingGraphicId === p.id ? (
+                              <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                                <select
+                                  value={p.folder}
+                                  onChange={(e) => handleMoveGraphic(p.id, e.target.value)}
+                                  className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                >
+                                  {folders.map((f) => (
+                                    <option key={f} value={f}>{f}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => setMovingGraphicId(null)}
+                                  className="text-[10px] text-gray-400 hover:text-gray-600 mt-0.5"
+                                >
+                                  Anuluj
+                                </button>
+                              </div>
+                            ) : isAdmin && !isEditingTags && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setMovingGraphicId(p.id); }}
+                                className="text-[10px] text-gray-400 hover:text-blue-600 transition-colors"
+                              >
+                                Przenieś do folderu
                               </button>
                             )}
                             {isAdmin && isEditingTags && (
