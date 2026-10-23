@@ -29,7 +29,7 @@ export async function GET() {
       name: t.name,
       folder: t.folder,
       thumbnail: t.thumbnail_path
-        ? `${supabaseUrl}/storage/v1/object/public/szablony-thumbs/${t.thumbnail_path}`
+        ? `${supabaseUrl}/storage/v1/object/public/szablony/${t.thumbnail_path}`
         : t.thumbnail || null,
       tags: t.tags || [],
       createdAt: t.created_at,
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
         thumbnailPath = `${safeFolder}/${Date.now()}_thumb.${ext}`;
 
         const { error: thumbError } = await supabase.storage
-          .from('szablony-thumbs')
+          .from('szablony')
           .upload(thumbnailPath, buffer, { contentType: `image/${matches[1]}`, upsert: true });
 
         if (thumbError) {
