@@ -371,6 +371,22 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     }
   };
 
+  const handleMoveTemplate = async (id: string, newFolder: string) => {
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+      await fetch('/api/templates', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id, folder: newFolder }),
+      });
+      setMovingGraphicId(null);
+      loadTemplates();
+    } catch (err) {
+      console.error('Błąd przenoszenia szablonu:', err);
+    }
+  };
+
   const handleDeleteTemplate = async (id: string) => {
     if (!confirm('Usunąć ten szablon?')) return;
     try {
@@ -1077,6 +1093,32 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                                 className="text-[10px] text-gray-400 hover:text-purple-600 transition-colors"
                               >
                                 Edytuj tagi
+                              </button>
+                            )}
+                            {isAdmin && movingGraphicId === t.id ? (
+                              <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                                <select
+                                  value={t.folder}
+                                  onChange={(e) => handleMoveTemplate(t.id, e.target.value)}
+                                  className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-400"
+                                >
+                                  {templateFolders.map((f) => (
+                                    <option key={f} value={f}>{f}</option>
+                                  ))}
+                                </select>
+                                <button
+                                  onClick={() => setMovingGraphicId(null)}
+                                  className="text-[10px] text-gray-400 hover:text-gray-600 mt-0.5"
+                                >
+                                  Anuluj
+                                </button>
+                              </div>
+                            ) : isAdmin && !isEditingTags && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setMovingGraphicId(t.id); }}
+                                className="text-[10px] text-gray-400 hover:text-blue-600 transition-colors"
+                              >
+                                Przenieś do folderu
                               </button>
                             )}
                             {isAdmin && isEditingTags && (
