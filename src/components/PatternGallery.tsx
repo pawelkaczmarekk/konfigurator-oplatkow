@@ -243,7 +243,10 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const handleUpload = async () => {
     if (uploadFiles.length === 0) return;
     const folder = showNewFolder ? newFolderName.trim() : uploadFolder;
-    if (!folder) return;
+    if (!folder) {
+      alert('Wybierz folder przed wgraniem grafiki');
+      return;
+    }
 
     setUploading(true);
     try {

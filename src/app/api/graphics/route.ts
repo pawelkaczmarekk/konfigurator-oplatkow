@@ -52,8 +52,11 @@ export async function POST(request: NextRequest) {
     const anonClient = getAnonClient();
     const { data: { user }, error: authError } = await anonClient.auth.getUser(token);
     if (authError || !user) {
+      console.error('Auth error:', authError);
       return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
     }
+
+    console.log('Upload graphics - user:', user.email);
 
     const supabase = getAuthClient(token);
 
@@ -85,10 +88,13 @@ export async function POST(request: NextRequest) {
     };
 
     const filename = sanitizeFilename(file.name);
+    const storagePath = `${folder}/${filename}`;
+
+    console.log('Upload graphics - path:', storagePath, 'size:', file.size);
 
     const { error: uploadError } = await supabase.storage
       .from('grafiki')
-      .upload(`${folder}/${filename}`, file, { upsert: true });
+      .upload(storagePath, file, { upsert: true });
 
     if (uploadError) {
       console.error('Storage upload error:', uploadError);
@@ -105,6 +111,8 @@ export async function POST(request: NextRequest) {
       console.error('DB insert error:', dbError);
       return NextResponse.json({ error: `DB: ${dbError.message}` }, { status: 500 });
     }
+
+    console.log('Upload graphics - success, id:', data.id);
 
     return NextResponse.json({ id: data.id });
   } catch (err) {
