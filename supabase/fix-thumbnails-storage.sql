@@ -4,6 +4,8 @@
 -- 1. Dodaj kolumnę thumbnail_path
 ALTER TABLE templates ADD COLUMN IF NOT EXISTS thumbnail_path TEXT;
 
+ALTER TABLE templates ADD COLUMN IF NOT EXISTS canvas_json_path TEXT;
+
 -- 2. Skopiuj istniejące thumbnail base64 do storage (ręcznie - stare miniaturki będą null)
 -- Stara kolumna thumbnail zostaje dla kompatybilności, ale GET już jej nie używa
 

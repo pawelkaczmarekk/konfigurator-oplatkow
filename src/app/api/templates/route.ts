@@ -64,6 +64,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brak wymaganych danych' }, { status: 400 });
     }
 
+    const sanitizePart = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
+    const safeFolder = sanitizePart(folder);
+
+    const canvasJsonPath = `${safeFolder}/${Date.now()}_canvas.json`;
+    const { error: jsonError } = await supabase.storage
+      .from('szablony')
+      .upload(canvasJsonPath, Buffer.from(canvasJson, 'utf-8'), { contentType: 'application/json', upsert: true });
+
+    if (jsonError) {
+      console.error('Canvas JSON upload error:', jsonError);
+      return NextResponse.json({ error: `Storage JSON: ${jsonError.message}` }, { status: 500 });
+    }
+
     let thumbnailPath: string | null = null;
     if (thumbnail && thumbnail.startsWith('data:')) {
       const matches = thumbnail.match(/^data:image\/(png|jpeg|webp);base64,(.+)$/);
@@ -71,9 +85,6 @@ export async function POST(request: NextRequest) {
         const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
         const base64 = matches[2];
         const buffer = Buffer.from(base64, 'base64');
-        const sanitizePart = (s: string) =>
-          s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
-        const safeFolder = sanitizePart(folder);
         thumbnailPath = `${safeFolder}/${Date.now()}_thumb.${ext}`;
 
         const { error: thumbError } = await supabase.storage
@@ -90,11 +101,10 @@ export async function POST(request: NextRequest) {
     const insertData: any = {
       name,
       folder,
-      canvas_json: canvasJson,
+      canvas_json_path: canvasJsonPath,
       shape_config: shapeConfig || {},
     };
     if (thumbnailPath) insertData.thumbnail_path = thumbnailPath;
-    if (!thumbnailPath && thumbnail) insertData.thumbnail = thumbnail;
 
     const { data, error: dbError } = await supabase
       .from('templates')
@@ -133,12 +143,15 @@ export async function DELETE(request: NextRequest) {
 
     const { data: template } = await supabase
       .from('templates')
-      .select('thumbnail_path')
+      .select('thumbnail_path, canvas_json_path')
       .eq('id', id)
       .single();
 
-    if (template?.thumbnail_path) {
-      await supabase.storage.from('szablony').remove([template.thumbnail_path]);
+    const filesToRemove: string[] = [];
+    if (template?.thumbnail_path) filesToRemove.push(template.thumbnail_path);
+    if (template?.canvas_json_path) filesToRemove.push(template.canvas_json_path);
+    if (filesToRemove.length > 0) {
+      await supabase.storage.from('szablony').remove(filesToRemove);
     }
 
     const { error: dbError } = await supabase
@@ -234,7 +247,7 @@ export async function PUT(request: NextRequest) {
     const supabase = getAnonClient();
     const { data: template, error } = await supabase
       .from('templates')
-      .select('canvas_json, shape_config')
+      .select('canvas_json, canvas_json_path, shape_config')
       .eq('id', id)
       .single();
 
@@ -243,8 +256,18 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Szablon nie istnieje' }, { status: 404 });
     }
 
+    let canvasJson = template.canvas_json;
+    if (!canvasJson && template.canvas_json_path) {
+      const { data: fileData } = await supabase.storage
+        .from('szablony')
+        .download(template.canvas_json_path);
+      if (fileData) {
+        canvasJson = await fileData.text();
+      }
+    }
+
     return NextResponse.json({
-      canvasJson: template.canvas_json,
+      canvasJson,
       shapeConfig: template.shape_config,
     });
   } catch (err) {
