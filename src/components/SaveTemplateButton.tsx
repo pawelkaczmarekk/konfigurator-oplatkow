@@ -42,10 +42,35 @@ export default function SaveTemplateButton({ canvas, shape }: SaveTemplateButton
       const json = canvas.toJSON();
       const canvasJson = JSON.stringify(json);
 
-      let thumbnail: string | null = null;
+      const sanitizePart = (s: string) =>
+        s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
+      const safeFolder = sanitizePart(finalFolder);
+      const ts = Date.now();
+
+      const canvasJsonPath = `${safeFolder}/${ts}_canvas.json`;
+      const { error: jsonUploadError } = await supabase!.storage
+        .from('szablony')
+        .upload(canvasJsonPath, new Blob([canvasJson], { type: 'application/json' }), { upsert: true });
+
+      if (jsonUploadError) {
+        throw new Error(`Storage JSON: ${jsonUploadError.message}`);
+      }
+
+      let thumbnailPath: string | null = null;
       try {
         const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 0.6 });
-        thumbnail = dataUrl;
+        const matches = dataUrl.match(/^data:image\/(png|jpeg|webp);base64,(.+)$/);
+        if (matches) {
+          const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+          const binary = atob(matches[2]);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          thumbnailPath = `${safeFolder}/${ts}_thumb.${ext}`;
+          const { error: thumbError } = await supabase!.storage
+            .from('szablony')
+            .upload(thumbnailPath, new Blob([bytes], { type: `image/${matches[1]}` }), { upsert: true });
+          if (thumbError) thumbnailPath = null;
+        }
       } catch {}
 
       const { data: { session } } = await supabase!.auth.getSession();
@@ -57,9 +82,9 @@ export default function SaveTemplateButton({ canvas, shape }: SaveTemplateButton
         body: JSON.stringify({
           name: name.trim(),
           folder: finalFolder,
-          canvasJson,
+          canvasJsonPath,
+          thumbnailPath,
           shapeConfig: shape,
-          thumbnail,
         }),
       });
 
@@ -79,6 +104,7 @@ export default function SaveTemplateButton({ canvas, shape }: SaveTemplateButton
       }, 1500);
     } catch (err) {
       console.error('Błąd zapisu szablonu:', err);
+      alert(`Błąd zapisu szablonu: ${err instanceof Error ? err.message : err}`);
     } finally {
       setSaving(false);
     }

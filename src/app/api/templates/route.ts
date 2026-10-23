@@ -58,44 +58,10 @@ export async function POST(request: NextRequest) {
 
     const supabase = getAuthClient(token);
     const body = await request.json();
-    const { name, folder, canvasJson, shapeConfig, thumbnail } = body;
+    const { name, folder, canvasJsonPath, thumbnailPath, shapeConfig } = body;
 
-    if (!name || !folder || !canvasJson) {
+    if (!name || !folder || !canvasJsonPath) {
       return NextResponse.json({ error: 'Brak wymaganych danych' }, { status: 400 });
-    }
-
-    const sanitizePart = (s: string) =>
-      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
-    const safeFolder = sanitizePart(folder);
-
-    const canvasJsonPath = `${safeFolder}/${Date.now()}_canvas.json`;
-    const { error: jsonError } = await supabase.storage
-      .from('szablony')
-      .upload(canvasJsonPath, Buffer.from(canvasJson, 'utf-8'), { contentType: 'application/json', upsert: true });
-
-    if (jsonError) {
-      console.error('Canvas JSON upload error:', jsonError);
-      return NextResponse.json({ error: `Storage JSON: ${jsonError.message}` }, { status: 500 });
-    }
-
-    let thumbnailPath: string | null = null;
-    if (thumbnail && thumbnail.startsWith('data:')) {
-      const matches = thumbnail.match(/^data:image\/(png|jpeg|webp);base64,(.+)$/);
-      if (matches) {
-        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
-        const base64 = matches[2];
-        const buffer = Buffer.from(base64, 'base64');
-        thumbnailPath = `${safeFolder}/${Date.now()}_thumb.${ext}`;
-
-        const { error: thumbError } = await supabase.storage
-          .from('szablony')
-          .upload(thumbnailPath, buffer, { contentType: `image/${matches[1]}`, upsert: true });
-
-        if (thumbError) {
-          console.error('Thumbnail upload error:', thumbError);
-          thumbnailPath = null;
-        }
-      }
     }
 
     const insertData: any = {
