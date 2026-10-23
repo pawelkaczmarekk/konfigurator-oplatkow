@@ -19,7 +19,7 @@ export async function GET() {
     const supabase = getAnonClient();
     const { data, error } = await supabase
       .from('templates')
-      .select('id, name, folder, thumbnail_path, tags, created_at')
+      .select('id, name, folder, thumbnail, thumbnail_path, tags, created_at')
       .order('folder', { ascending: true });
 
     if (error) throw error;
@@ -30,7 +30,7 @@ export async function GET() {
       folder: t.folder,
       thumbnail: t.thumbnail_path
         ? `${supabaseUrl}/storage/v1/object/public/szablony/${t.thumbnail_path}`
-        : null,
+        : t.thumbnail || null,
       tags: t.tags || [],
       createdAt: t.created_at,
     }));
@@ -87,15 +87,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const insertData: any = {
+      name,
+      folder,
+      canvas_json: canvasJson,
+      shape_config: shapeConfig || {},
+    };
+    if (thumbnailPath) insertData.thumbnail_path = thumbnailPath;
+    if (!thumbnailPath && thumbnail) insertData.thumbnail = thumbnail;
+
     const { data, error: dbError } = await supabase
       .from('templates')
-      .insert({
-        name,
-        folder,
-        canvas_json: canvasJson,
-        shape_config: shapeConfig || {},
-        thumbnail_path: thumbnailPath,
-      })
+      .insert(insertData)
       .select('id')
       .single();
 
