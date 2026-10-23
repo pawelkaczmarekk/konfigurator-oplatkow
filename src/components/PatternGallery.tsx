@@ -274,8 +274,9 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       setUploadTags('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       loadGraphics();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Błąd wgrywania:', err);
+      alert(`Błąd wgrywania: ${err?.message || err}`);
     } finally {
       setUploading(false);
     }
