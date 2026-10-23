@@ -122,7 +122,7 @@ export async function PATCH(request: NextRequest) {
       const { data: items, error: fetchError } = await supabase
         .from('graphics')
         .select('id, folder, filename')
-        .eq('folder', renameFolder);
+        .or(`folder.eq.${renameFolder},folder.like.${renameFolder}/*`);
 
       if (fetchError) {
         console.error('Folder rename fetch error:', fetchError);
@@ -130,19 +130,13 @@ export async function PATCH(request: NextRequest) {
       }
 
       for (const item of (items || [])) {
+        const newFolder = item.folder === renameFolder
+          ? newFolderName
+          : newFolderName + item.folder.slice(renameFolder.length);
         const oldPath = `${item.folder}/${item.filename}`;
-        const newPath = `${newFolderName}/${item.filename}`;
+        const newPath = `${newFolder}/${item.filename}`;
         await supabase.storage.from('grafiki').move(oldPath, newPath);
-      }
-
-      const { error: updateError } = await supabase
-        .from('graphics')
-        .update({ folder: newFolderName })
-        .eq('folder', renameFolder);
-
-      if (updateError) {
-        console.error('Folder rename update error:', updateError);
-        return NextResponse.json({ error: `DB: ${updateError.message}` }, { status: 500 });
+        await supabase.from('graphics').update({ folder: newFolder }).eq('id', item.id);
       }
 
       return NextResponse.json({ success: true });

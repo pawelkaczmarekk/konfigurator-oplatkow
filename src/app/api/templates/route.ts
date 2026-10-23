@@ -139,14 +139,21 @@ export async function PATCH(request: NextRequest) {
     const { id, name, folder, tags, renameFolder, newFolderName } = await request.json();
 
     if (renameFolder && newFolderName) {
-      const { error: updateError } = await supabase
+      const { data: items, error: fetchError } = await supabase
         .from('templates')
-        .update({ folder: newFolderName })
-        .eq('folder', renameFolder);
+        .select('id, folder')
+        .or(`folder.eq.${renameFolder},folder.like.${renameFolder}/*`);
 
-      if (updateError) {
-        console.error('Folder rename update error:', updateError);
-        return NextResponse.json({ error: `DB: ${updateError.message}` }, { status: 500 });
+      if (fetchError) {
+        console.error('Folder rename fetch error:', fetchError);
+        return NextResponse.json({ error: `DB: ${fetchError.message}` }, { status: 500 });
+      }
+
+      for (const item of (items || [])) {
+        const newFolder = item.folder === renameFolder
+          ? newFolderName
+          : newFolderName + item.folder.slice(renameFolder.length);
+        await supabase.from('templates').update({ folder: newFolder }).eq('id', item.id);
       }
 
       return NextResponse.json({ success: true });
