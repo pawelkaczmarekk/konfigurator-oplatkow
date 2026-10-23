@@ -104,6 +104,8 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [movingGraphicId, setMovingGraphicId] = useState<string | null>(null);
   const [creatingSubfolderIn, setCreatingSubfolderIn] = useState<string | null>(null);
   const [subfolderInput, setSubfolderInput] = useState('');
+  const [editingNameId, setEditingNameId] = useState<string | null>(null);
+  const [editingNameValue, setEditingNameValue] = useState('');
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -318,6 +320,23 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       loadGraphics();
     } catch (err) {
       console.error('Błąd aktualizacji tagów:', err);
+    }
+  };
+
+  const handleUpdateName = async (id: string, name: string, isTemplate: boolean = false) => {
+    try {
+      const { data: { session } } = await supabase!.auth.getSession();
+      const token = session?.access_token;
+      await fetch(isTemplate ? '/api/templates' : '/api/graphics', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id, name }),
+      });
+      setEditingNameId(null);
+      setEditingNameValue('');
+      if (isTemplate) loadTemplates(); else loadGraphics();
+    } catch (err) {
+      console.error('Błąd aktualizacji nazwy:', err);
     }
   };
 
@@ -976,7 +995,33 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                                 <div className="absolute inset-0" />
                               </div>
                             </button>
-                            <span className="text-xs text-gray-600 group-hover:text-amber-700 font-medium">{pattern.name}</span>
+                            {isAdmin && editingNameId === p.id ? (
+                              <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={editingNameValue}
+                                  onChange={(e) => setEditingNameValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateName(p.id, editingNameValue);
+                                    if (e.key === 'Escape') { setEditingNameId(null); setEditingNameValue(''); }
+                                  }}
+                                  className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-amber-400"
+                                  autoFocus
+                                />
+                                <button onClick={() => handleUpdateName(p.id, editingNameValue)} className="text-[10px] text-green-600 hover:text-green-700 mr-2">Zapisz</button>
+                                <button onClick={() => { setEditingNameId(null); setEditingNameValue(''); }} className="text-[10px] text-gray-400 hover:text-gray-600">Anuluj</button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-600 group-hover:text-amber-700 font-medium">{pattern.name}</span>
+                            )}
+                            {isAdmin && editingNameId !== p.id && !isEditingTags && movingGraphicId !== p.id && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditingNameId(p.id); setEditingNameValue(pattern.name); }}
+                                className="text-[10px] text-gray-400 hover:text-amber-600 transition-colors"
+                              >
+                                Edytuj nazwę
+                              </button>
+                            )}
                             {isAdmin && p.tags && p.tags.length > 0 && !isEditingTags && (
                               <div className="flex flex-wrap gap-1 w-full">
                                 {p.tags.map((tag) => (
@@ -1086,7 +1131,33 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                                 <div className="absolute inset-0" />
                               </div>
                             </button>
-                            <span className="text-xs text-gray-600 group-hover:text-purple-700 font-medium">{template.name}</span>
+                            {isAdmin && editingNameId === t.id ? (
+                              <div className="w-full" onClick={(e) => e.stopPropagation()}>
+                                <input
+                                  type="text"
+                                  value={editingNameValue}
+                                  onChange={(e) => setEditingNameValue(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') handleUpdateName(t.id, editingNameValue, true);
+                                    if (e.key === 'Escape') { setEditingNameId(null); setEditingNameValue(''); }
+                                  }}
+                                  className="w-full px-2 py-1 border border-gray-200 rounded text-xs focus:outline-none focus:ring-1 focus:ring-purple-400"
+                                  autoFocus
+                                />
+                                <button onClick={() => handleUpdateName(t.id, editingNameValue, true)} className="text-[10px] text-green-600 hover:text-green-700 mr-2">Zapisz</button>
+                                <button onClick={() => { setEditingNameId(null); setEditingNameValue(''); }} className="text-[10px] text-gray-400 hover:text-gray-600">Anuluj</button>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-600 group-hover:text-purple-700 font-medium">{template.name}</span>
+                            )}
+                            {isAdmin && editingNameId !== t.id && !isEditingTags && movingGraphicId !== t.id && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setEditingNameId(t.id); setEditingNameValue(template.name); }}
+                                className="text-[10px] text-gray-400 hover:text-purple-600 transition-colors"
+                              >
+                                Edytuj nazwę
+                              </button>
+                            )}
                             {isAdmin && t.tags && t.tags.length > 0 && !isEditingTags && (
                               <div className="flex flex-wrap gap-1 w-full">
                                 {t.tags.map((tag) => (

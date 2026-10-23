@@ -131,6 +131,16 @@ export async function DELETE(request: NextRequest) {
     const supabase = getAuthClient(token);
     const { id } = await request.json();
 
+    const { data: template } = await supabase
+      .from('templates')
+      .select('thumbnail_path')
+      .eq('id', id)
+      .single();
+
+    if (template?.thumbnail_path) {
+      await supabase.storage.from('szablony').remove([template.thumbnail_path]);
+    }
+
     const { error: dbError } = await supabase
       .from('templates')
       .delete()
