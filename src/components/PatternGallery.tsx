@@ -138,6 +138,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const categoryTree = buildCategoryTree(activeTab === 'graphics' ? folders : templateFolders);
 
   const filtered = (activeTab === 'graphics' ? patterns : templates).filter((p) => {
+    if (p.name === '.gitkeep') return false;
     const matchCat = activeCategory === 'all' || p.folder === activeCategory || p.folder.startsWith(activeCategory + '/');
     const q = search.toLowerCase();
     const tags = ('tags' in p) ? (p as PatternItem).tags : [];
