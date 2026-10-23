@@ -53,24 +53,27 @@ CREATE POLICY "Authenticated users can delete templates" ON templates
   FOR DELETE USING (auth.role() = 'authenticated');
 
 -- ==========================================
--- STORAGE BUCKET: grafiki
+-- STORAGE BUCKET: grafiki (polityki na storage.objects)
 -- ==========================================
 
 -- Usuń stare polityki storage
-DELETE FROM storage.policies WHERE bucket_id = 'grafiki';
+DROP POLICY IF EXISTS "Public read grafiki" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated upload grafiki" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated update grafiki" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated delete grafiki" ON storage.objects;
 
 -- Odczyt publiczny (żeby grafiki się wyświetlały)
-INSERT INTO storage.policies (name, bucket_id, definition, allow, operation)
-VALUES ('Public read grafiki', 'grafiki', 'true', true, 'SELECT');
+CREATE POLICY "Public read grafiki" ON storage.objects
+  FOR SELECT USING (bucket_id = 'grafiki');
 
 -- Upload dla zalogowanych
-INSERT INTO storage.policies (name, bucket_id, definition, allow, operation)
-VALUES ('Authenticated upload grafiki', 'grafiki', 'auth.role() = ''authenticated''', true, 'INSERT');
+CREATE POLICY "Authenticated upload grafiki" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'grafiki' AND auth.role() = 'authenticated');
 
 -- Update dla zalogowanych
-INSERT INTO storage.policies (name, bucket_id, definition, allow, operation)
-VALUES ('Authenticated update grafiki', 'grafiki', 'auth.role() = ''authenticated''', true, 'UPDATE');
+CREATE POLICY "Authenticated update grafiki" ON storage.objects
+  FOR UPDATE USING (bucket_id = 'grafiki' AND auth.role() = 'authenticated');
 
 -- Delete dla zalogowanych
-INSERT INTO storage.policies (name, bucket_id, definition, allow, operation)
-VALUES ('Authenticated delete grafiki', 'grafiki', 'auth.role() = ''authenticated''', true, 'DELETE');
+CREATE POLICY "Authenticated delete grafiki" ON storage.objects
+  FOR DELETE USING (bucket_id = 'grafiki' AND auth.role() = 'authenticated');

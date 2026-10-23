@@ -60,7 +60,10 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
-    const folder = formData.get('folder') as string;
+    const sanitizePart = (s: string) =>
+      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
+
+    const folder = sanitizePart(formData.get('folder') as string);
     const tagsRaw = formData.get('tags') as string | null;
 
     if (!file || !name || !folder) {
@@ -71,7 +74,17 @@ export async function POST(request: NextRequest) {
       ? tagsRaw.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean)
       : [];
 
-    const filename = file.name;
+    const sanitizeFilename = (name: string) => {
+      const ext = name.lastIndexOf('.');
+      const base = ext >= 0 ? name.slice(0, ext) : name;
+      const extPart = ext >= 0 ? name.slice(ext) : '';
+      const sanitized = base
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9_-]/g, '_');
+      return sanitized + extPart;
+    };
+
+    const filename = sanitizeFilename(file.name);
 
     const { error: uploadError } = await supabase.storage
       .from('grafiki')
