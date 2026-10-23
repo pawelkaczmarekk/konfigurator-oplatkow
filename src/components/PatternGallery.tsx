@@ -228,6 +228,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
     if (files.length > 0) {
       setUploadFiles(files);
+      if (activeCategory !== 'all' && !uploadFolder) setUploadFolder(activeCategory);
     }
   };
 
@@ -235,6 +236,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     const files = Array.from(e.target.files || []);
     if (files.length > 0) {
       setUploadFiles(files);
+      if (activeCategory !== 'all' && !uploadFolder) setUploadFolder(activeCategory);
     }
   };
 
