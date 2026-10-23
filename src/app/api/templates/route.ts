@@ -19,7 +19,7 @@ export async function GET() {
     const supabase = getAnonClient();
     const { data, error } = await supabase
       .from('templates')
-      .select('id, name, folder, thumbnail, tags, created_at')
+      .select('id, name, folder, thumbnail_path, tags, created_at')
       .order('folder', { ascending: true });
 
     if (error) throw error;
@@ -28,7 +28,9 @@ export async function GET() {
       id: t.id,
       name: t.name,
       folder: t.folder,
-      thumbnail: t.thumbnail,
+      thumbnail: t.thumbnail_path
+        ? `${supabaseUrl}/storage/v1/object/public/szablony/${t.thumbnail_path}`
+        : null,
       tags: t.tags || [],
       createdAt: t.created_at,
     }));
@@ -62,6 +64,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brak wymaganych danych' }, { status: 400 });
     }
 
+    let thumbnailPath: string | null = null;
+    if (thumbnail && thumbnail.startsWith('data:')) {
+      const matches = thumbnail.match(/^data:image\/(png|jpeg|webp);base64,(.+)$/);
+      if (matches) {
+        const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+        const base64 = matches[2];
+        const buffer = Buffer.from(base64, 'base64');
+        const sanitizePart = (s: string) =>
+          s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
+        const safeFolder = sanitizePart(folder);
+        thumbnailPath = `${safeFolder}/${Date.now()}_thumb.${ext}`;
+
+        const { error: thumbError } = await supabase.storage
+          .from('szablony')
+          .upload(thumbnailPath, buffer, { contentType: `image/${matches[1]}`, upsert: true });
+
+        if (thumbError) {
+          console.error('Thumbnail upload error:', thumbError);
+          thumbnailPath = null;
+        }
+      }
+    }
+
     const { data, error: dbError } = await supabase
       .from('templates')
       .insert({
@@ -69,7 +94,7 @@ export async function POST(request: NextRequest) {
         folder,
         canvas_json: canvasJson,
         shape_config: shapeConfig || {},
-        thumbnail: thumbnail || null,
+        thumbnail_path: thumbnailPath,
       })
       .select('id')
       .single();
