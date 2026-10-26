@@ -80,7 +80,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   useEffect(() => {
     if (externalOpen) setIsOpen(true);
   }, [externalOpen]);
-  const [activeTab, setActiveTab] = useState<'graphics' | 'templates'>('graphics');
+  const [activeTab, setActiveTab] = useState<'graphics' | 'templates'>('templates');
   const [activeCategory, setActiveCategory] = useState<string>('all');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
@@ -106,6 +106,8 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [subfolderInput, setSubfolderInput] = useState('');
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState('');
+  const [visibleCount, setVisibleCount] = useState(12);
+  const sentinelRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,6 +136,25 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     loadGraphics();
     loadTemplates();
   }, [isOpen, loadGraphics, loadTemplates]);
+
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [activeTab, activeCategory, search]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleCount((prev) => prev + 12);
+        }
+      },
+      { rootMargin: '200px' }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, activeCategory, search]);
 
   const folders = [...new Set(patterns.map((p) => p.folder))];
   const templateFolders = [...new Set(templates.map((t) => t.folder))];
@@ -749,16 +770,6 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                   <h2 className="text-lg font-bold text-gray-800">Galeria</h2>
                   <div className="flex bg-gray-100 rounded-lg p-0.5">
                     <button
-                      onClick={() => { setActiveTab('graphics'); setActiveCategory('all'); }}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                        activeTab === 'graphics'
-                          ? 'bg-white text-gray-800 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700'
-                      }`}
-                    >
-                      Grafiki
-                    </button>
-                    <button
                       onClick={() => { setActiveTab('templates'); setActiveCategory('all'); }}
                       className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
                         activeTab === 'templates'
@@ -767,6 +778,16 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                       }`}
                     >
                       Gotowe projekty
+                    </button>
+                    <button
+                      onClick={() => { setActiveTab('graphics'); setActiveCategory('all'); }}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                        activeTab === 'graphics'
+                          ? 'bg-white text-gray-800 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Grafiki
                     </button>
                   </div>
                 </div>
@@ -1134,8 +1155,9 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                       })}
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
-                      {filtered.map((template) => {
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
+                        {filtered.slice(0, visibleCount).map((template) => {
                         const t = template as TemplateItem;
                         const isEditingTags = editingTagsId === t.id;
                         return (
@@ -1269,6 +1291,12 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                         );
                       })}
                     </div>
+                    <div ref={sentinelRef} className="flex items-center justify-center py-4">
+                      {filtered.length > visibleCount && (
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600" />
+                      )}
+                    </div>
+                    </>
                   )}
                 </div>
               </div>
