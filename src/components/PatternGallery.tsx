@@ -456,13 +456,25 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
         }
         loadGraphics();
       } else {
+        const placeholderBlob = new Blob(['{}'], { type: 'application/json' });
+        const safeFolder = folderName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
+        const ts = Date.now();
+        const canvasJsonPath = `${safeFolder}/${ts}_canvas.json`;
+        const { error: storageErr } = await supabase!.storage
+          .from('szablony')
+          .upload(canvasJsonPath, placeholderBlob, { upsert: true });
+
+        if (storageErr) {
+          throw new Error(`Storage: ${storageErr.message}`);
+        }
+
         const res = await fetch('/api/templates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
           body: JSON.stringify({
             name: '.gitkeep',
             folder: folderName,
-            canvasJson: {},
+            canvasJsonPath,
             shapeConfig: {},
           }),
         });
@@ -508,13 +520,25 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
         }
         loadGraphics();
       } else {
+        const placeholderBlob = new Blob(['{}'], { type: 'application/json' });
+        const safeFolder = folderName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_/-]/g, '_');
+        const ts = Date.now();
+        const canvasJsonPath = `${safeFolder}/${ts}_canvas.json`;
+        const { error: storageErr } = await supabase!.storage
+          .from('szablony')
+          .upload(canvasJsonPath, placeholderBlob, { upsert: true });
+
+        if (storageErr) {
+          throw new Error(`Storage: ${storageErr.message}`);
+        }
+
         const res = await fetch('/api/templates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
           body: JSON.stringify({
             name: '.gitkeep',
             folder: folderName,
-            canvasJson: {},
+            canvasJsonPath,
             shapeConfig: {},
           }),
         });
