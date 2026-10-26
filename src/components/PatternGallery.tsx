@@ -108,6 +108,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [editingNameValue, setEditingNameValue] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -143,18 +144,19 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    const scrollContainer = scrollContainerRef.current;
+    if (!sentinel || !scrollContainer) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
           setVisibleCount((prev) => prev + 12);
         }
       },
-      { rootMargin: '200px' }
+      { root: scrollContainer, rootMargin: '100px' }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [activeTab, activeCategory, search]);
+  }, [activeTab, activeCategory, search, templates.length]);
 
   const folders = [...new Set(patterns.map((p) => p.folder))];
   const templateFolders = [...new Set(templates.map((t) => t.folder))];
@@ -1012,7 +1014,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                   </div>
                 )}
 
-                <div className="flex-1 p-4 overflow-y-auto">
+                <div ref={scrollContainerRef} className="flex-1 p-4 overflow-y-auto">
                   {loading && activeTab === 'graphics' ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-600" />
