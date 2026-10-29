@@ -45,8 +45,17 @@ const folderLabels: Record<string, string> = {};
 function buildCategoryTree(folders: string[]): CategoryNode[] {
   const root: CategoryNode[] = [];
   const childMap: Record<string, CategoryNode[]> = {};
+  const nodeMap: Record<string, CategoryNode> = {};
 
+  const allPaths = new Set<string>();
   for (const folder of folders) {
+    const parts = folder.split('/');
+    for (let i = 1; i <= parts.length; i++) {
+      allPaths.add(parts.slice(0, i).join('/'));
+    }
+  }
+
+  for (const folder of allPaths) {
     const parts = folder.split('/');
     const parentKey = parts.length > 1 ? parts.slice(0, -1).join('/') : null;
     const label = folderLabels[folder] || parts[parts.length - 1];
@@ -57,12 +66,31 @@ function buildCategoryTree(folders: string[]): CategoryNode[] {
       children: [],
     };
 
-    if (parentKey && childMap[parentKey]) {
+    nodeMap[folder] = node;
+    childMap[folder] = node.children!;
+
+    if (parentKey) {
+      if (!childMap[parentKey]) {
+        const parentParts = parentKey.split('/');
+        const parentNode: CategoryNode = {
+          key: parentKey,
+          label: folderLabels[parentKey] || parentParts[parentParts.length - 1],
+          isFolder: true,
+          children: [],
+        };
+        nodeMap[parentKey] = parentNode;
+        childMap[parentKey] = parentNode.children!;
+        const grandParentKey = parentParts.length > 1 ? parentParts.slice(0, -1).join('/') : null;
+        if (grandParentKey && childMap[grandParentKey]) {
+          childMap[grandParentKey].push(parentNode);
+        } else {
+          root.push(parentNode);
+        }
+      }
       childMap[parentKey].push(node);
     } else {
       root.push(node);
     }
-    childMap[folder] = node.children!;
   }
 
   return root;
