@@ -262,7 +262,7 @@ export default function ProjektPage() {
           <h1 className="text-lg font-semibold text-gray-800">Podgląd projektu</h1>
           <div className="flex items-center gap-3 mt-0.5">
             <p className="text-xs text-gray-500">
-              Utworzono: {project?.createdAt ? new Date(project.createdAt).toLocaleString('pl-PL') : ''}
+              Utworzono: {project?.createdAt ? new Date(project.createdAt).toLocaleString('pl-PL') : '—'}
             </p>
             {project?.orderId && (
               <span className="text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-medium">

@@ -354,7 +354,7 @@ export default function AdminProjectsPage() {
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-xs text-gray-500">
-                            {new Date(project.createdAt).toLocaleString('pl-PL')}
+                            {project.createdAt ? new Date(project.createdAt).toLocaleString('pl-PL') : '—'}
                           </span>
                         </td>
                       </tr>

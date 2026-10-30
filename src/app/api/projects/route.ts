@@ -80,6 +80,7 @@ export async function POST(request: NextRequest) {
       shape: shape || { type: 'rectangle' },
       source: source || 'oferta',
       status: 'nowy',
+      created_at: new Date().toISOString(),
     };
 
     if (canvasJsonPath) {
