@@ -57,19 +57,26 @@ export default function ProjektPage() {
   useEffect(() => {
     if (!id) return;
 
-    fetch(`/api/projects/${id}`)
-      .then((res) => {
+    const loadProject = async () => {
+      try {
+        const { data: { session } } = await supabase!.auth.getSession();
+        const headers: Record<string, string> = {};
+        if (session?.access_token) {
+          headers['authorization'] = `Bearer ${session.access_token}`;
+        }
+
+        const res = await fetch(`/api/projects/${id}`, { headers });
         if (!res.ok) throw new Error('Nie znaleziono projektu');
-        return res.json();
-      })
-      .then((data) => {
+        const data = await res.json();
         setProject(data);
-        setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err: any) {
         setError(err.message);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    loadProject();
   }, [id]);
 
   useEffect(() => {

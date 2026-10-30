@@ -9,6 +9,24 @@ export async function GET(
   try {
     const { id } = await params;
 
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.replace('Bearer ', '');
+
+    if (!token) {
+      return NextResponse.json({ error: 'Wymagane logowanie' }, { status: 401 });
+    }
+
+    const supabaseServer = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser(token);
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Nieprawidłowy token' }, { status: 401 });
+    }
+
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')
