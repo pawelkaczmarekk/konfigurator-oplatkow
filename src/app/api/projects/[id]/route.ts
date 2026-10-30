@@ -25,7 +25,7 @@ export async function GET(
 
       if (data.canvas_json_path) {
         const { data: fileData } = await supabase.storage
-          .from('szablony')
+          .from('projekty')
           .download(data.canvas_json_path);
 
         if (fileData) {

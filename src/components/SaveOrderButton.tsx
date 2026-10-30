@@ -26,9 +26,9 @@ export default function SaveOrderButton({ canvas, shape, projectId }: SaveOrderB
       const canvasJson = JSON.stringify(json);
 
       const ts = Date.now();
-      const canvasJsonPath = `projekty/${ts}_canvas.json`;
+      const canvasJsonPath = `${ts}_canvas.json`;
       const { error: storageErr } = await supabase!.storage
-        .from('szablony')
+        .from('projekty')
         .upload(canvasJsonPath, new Blob([canvasJson], { type: 'application/json' }), { upsert: true });
 
       if (storageErr) {

@@ -17,7 +17,17 @@ CREATE POLICY "Anyone can insert projects" ON projects
 CREATE POLICY "Anyone can update projects" ON projects
   FOR UPDATE USING (true) WITH CHECK (true);
 
--- Polityka publiczna na storage szablonow (zeby klient mogl uploadowac JSON projektu)
+-- Utwórz bucket projekty (jeśli nie istnieje)
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('projekty', 'projekty', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Polityki na storage bucket projekty
 DROP POLICY IF EXISTS "Public upload projekty" ON storage.objects;
+DROP POLICY IF EXISTS "Public read projekty" ON storage.objects;
+
 CREATE POLICY "Public upload projekty" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'szablony');
+  FOR INSERT WITH CHECK (bucket_id = 'projekty');
+
+CREATE POLICY "Public read projekty" ON storage.objects
+  FOR SELECT USING (bucket_id = 'projekty');
