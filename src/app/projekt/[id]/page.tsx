@@ -117,7 +117,7 @@ export default function ProjektPage() {
 
     canvas.setZoom(scale);
 
-    const json = JSON.parse(project.canvasJson);
+    const json = typeof project.canvasJson === 'string' ? JSON.parse(project.canvasJson) : project.canvasJson;
     canvas.loadFromJSON(json).then(() => {
       applyShapeToCanvas(canvas, project.shape);
       canvas.renderAll();
