@@ -53,9 +53,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { canvasJson, shape, orderId, source } = body;
+    const { canvasJson, canvasJsonPath, shape, orderId, source } = body;
 
-    if (!canvasJson && !orderId) {
+    if (!canvasJson && !canvasJsonPath && !orderId) {
       return NextResponse.json({ error: 'Brak danych' }, { status: 400 });
     }
 
@@ -81,6 +81,10 @@ export async function POST(request: NextRequest) {
       source: source || 'oferta',
       status: 'nowy',
     };
+
+    if (canvasJsonPath) {
+      insertData.canvas_json_path = canvasJsonPath;
+    }
 
     if (orderId) {
       insertData.order_id = orderId;

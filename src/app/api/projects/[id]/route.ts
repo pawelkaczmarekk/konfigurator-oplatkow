@@ -12,7 +12,7 @@ export async function GET(
     if (isSupabaseConfigured && supabase) {
       const { data, error } = await supabase
         .from('projects')
-        .select('id, canvas_json, shape, created_at, order_id, source, locked, status')
+        .select('id, canvas_json, canvas_json_path, shape, created_at, order_id, source, locked, status')
         .eq('id', id)
         .single();
 
@@ -21,9 +21,22 @@ export async function GET(
         return NextResponse.json({ error: 'Projekt nie znaleziony' }, { status: 404 });
       }
 
+      let canvasJson = data.canvas_json;
+
+      if (data.canvas_json_path) {
+        const { data: fileData } = await supabase.storage
+          .from('szablony')
+          .download(data.canvas_json_path);
+
+        if (fileData) {
+          const text = await fileData.text();
+          canvasJson = JSON.parse(text);
+        }
+      }
+
       return NextResponse.json({
         id: data.id,
-        canvasJson: data.canvas_json,
+        canvasJson,
         shape: data.shape,
         createdAt: data.created_at,
         orderId: data.order_id,
@@ -69,6 +82,7 @@ export async function PATCH(
 
     const updateData: any = {};
     if (body.canvasJson !== undefined) updateData.canvas_json = body.canvasJson;
+    if (body.canvasJsonPath !== undefined) updateData.canvas_json_path = body.canvasJsonPath;
     if (body.shape !== undefined) updateData.shape = body.shape;
     if (body.locked !== undefined) updateData.locked = body.locked;
     if (body.status !== undefined) updateData.status = body.status;

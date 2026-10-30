@@ -228,7 +228,14 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
       const data = await res.json();
 
       const json = typeof data.canvasJson === 'string' ? JSON.parse(data.canvasJson) : data.canvasJson;
-      await canvas.loadFromJSON(json);
+      await canvas.loadFromJSON(json, () => {
+        canvas.getObjects().forEach((obj) => {
+          if (obj.type === 'image') {
+            (obj as any).set('crossOrigin', 'anonymous');
+          }
+        });
+        canvas.renderAll();
+      });
 
       if (data.shapeConfig && onShapeChange) {
         onShapeChange(data.shapeConfig as ShapeConfig);

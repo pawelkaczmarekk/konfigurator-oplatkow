@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Canvas } from 'fabric';
 import { ShapeConfig } from '@/types';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase-browser';
 
 interface SaveOrderButtonProps {
   canvas: Canvas | null;
@@ -24,10 +25,20 @@ export default function SaveOrderButton({ canvas, shape, projectId }: SaveOrderB
       const json = canvas.toJSON();
       const canvasJson = JSON.stringify(json);
 
+      const ts = Date.now();
+      const canvasJsonPath = `projekty/${ts}_canvas.json`;
+      const { error: storageErr } = await supabase!.storage
+        .from('szablony')
+        .upload(canvasJsonPath, new Blob([canvasJson], { type: 'application/json' }), { upsert: true });
+
+      if (storageErr) {
+        throw new Error(`Storage: ${storageErr.message}`);
+      }
+
       const res = await fetch(`/api/projects/${projectId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ canvasJson, shape, locked: true, status: 'gotowy' }),
+        body: JSON.stringify({ canvasJsonPath, shape, locked: true, status: 'gotowy' }),
       });
 
       if (!res.ok) throw new Error('Błąd zapisu');

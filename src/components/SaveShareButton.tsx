@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Canvas } from 'fabric';
 import { ShapeConfig } from '@/types';
+import { supabase } from '@/lib/supabase-browser';
 
 interface SaveShareButtonProps {
   canvas: Canvas | null;
@@ -23,10 +24,21 @@ export default function SaveShareButton({ canvas, shape }: SaveShareButtonProps)
     try {
       const json = canvas.toJSON();
       const canvasJson = JSON.stringify(json);
+
+      const ts = Date.now();
+      const canvasJsonPath = `projekty/${ts}_canvas.json`;
+      const { error: storageErr } = await supabase!.storage
+        .from('szablony')
+        .upload(canvasJsonPath, new Blob([canvasJson], { type: 'application/json' }), { upsert: true });
+
+      if (storageErr) {
+        throw new Error(`Storage: ${storageErr.message}`);
+      }
+
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ canvasJson, shape }),
+        body: JSON.stringify({ canvasJsonPath, shape }),
       });
 
       if (!res.ok) throw new Error('Błąd zapisu');
