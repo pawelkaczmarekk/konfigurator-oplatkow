@@ -40,21 +40,19 @@ export async function GET(
       }
 
       let canvasJson = data.canvas_json;
+      let canvasJsonUrl: string | null = null;
 
       if (data.canvas_json_path) {
-        const { data: fileData } = await supabase.storage
+        const { data: urlData } = supabase.storage
           .from('projekty')
-          .download(data.canvas_json_path);
-
-        if (fileData) {
-          const text = await fileData.text();
-          canvasJson = JSON.parse(text);
-        }
+          .getPublicUrl(data.canvas_json_path);
+        canvasJsonUrl = urlData?.publicUrl || null;
       }
 
       return NextResponse.json({
         id: data.id,
-        canvasJson,
+        canvasJson: canvasJsonUrl ? null : canvasJson,
+        canvasJsonUrl,
         shape: data.shape,
         createdAt: data.created_at,
         orderId: data.order_id,

@@ -68,6 +68,13 @@ export default function ProjektPage() {
         const res = await fetch(`/api/projects/${id}`, { headers });
         if (!res.ok) throw new Error('Nie znaleziono projektu');
         const data = await res.json();
+
+        if (data.canvasJsonUrl) {
+          const jsonRes = await fetch(data.canvasJsonUrl);
+          if (!jsonRes.ok) throw new Error('Błąd pobierania projektu');
+          data.canvasJson = await jsonRes.json();
+        }
+
         setProject(data);
       } catch (err: any) {
         setError(err.message);
