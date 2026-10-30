@@ -800,7 +800,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
           }}
           onContextMenu={(e) => e.preventDefault()}
         >
-          <div className="bg-white rounded-xl shadow-2xl w-[1100px] max-w-[95vw] h-[85vh] flex flex-col overflow-hidden">
+          <div className="bg-white rounded-xl shadow-2xl w-[1300px] max-w-[97vw] h-[90vh] flex flex-col overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-4">
@@ -853,7 +853,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
             </div>
 
             <div className="flex flex-1 overflow-hidden relative">
-              <nav className="hidden md:block w-52 border-r border-gray-100 py-2 shrink-0 overflow-y-auto">
+              <nav className="hidden md:block w-64 border-r border-gray-100 py-2 shrink-0 overflow-y-auto">
                 <button
                   onClick={() => setActiveCategory('all')}
                   className={`w-full text-left px-4 py-2 text-sm transition-colors ${
@@ -930,11 +930,11 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                     onClick={() => setShowMobileCategories(true)}
                     className="w-full flex items-center justify-between px-3 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-700 hover:border-amber-400 hover:bg-amber-50 transition-colors"
                   >
-                    <span className="flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <span className="flex items-center gap-2 min-w-0">
+                      <svg className="w-4 h-4 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7h18M3 12h18M3 17h18" />
                       </svg>
-                      {activeCategory === 'all' ? 'Wszystkie kategorie' : folderLabels[activeCategory] || activeCategory}
+                      <span className="truncate">{activeCategory === 'all' ? 'Wszystkie kategorie' : folderLabels[activeCategory] || activeCategory}</span>
                     </span>
                     <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />

@@ -19,7 +19,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Cormorant+Garamond:wght@400;700&family=Dancing+Script:wght@400;700&family=Great+Vibes&family=Lobster&family=Lora:wght@400;700&family=Merriweather:wght@400;700&family=Parisienne&family=Pinyon+Script&family=Playfair+Display:wght@400;700&family=Sacramento&family=Sail&family=Satisfy&family=Tangerine:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bad+Script&family=Caveat:wght@400;700&family=Cormorant+Garamond:wght@400;700&family=Cormorant:wght@400;700&family=Dancing+Script:wght@400;700&family=EB+Garamond:wght@400;700&family=Kalam:wght@400;700&family=Lobster&family=Lora:wght@400;700&family=Marck+Script&family=Merriweather:wght@400;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Ruslan+Display&family=Ruthie&subset=latin-ext&display=swap"
           rel="stylesheet"
         />
       </head>
