@@ -768,28 +768,30 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
           </div>
         ) : (
           <div
-            draggable={isAdmin && !mobile}
-            onDragStart={isAdmin ? handleDragStart : undefined}
-            onDragOver={isAdmin ? handleDragOver : undefined}
-            onDragLeave={isAdmin ? handleDragLeave : undefined}
-            onDrop={isAdmin ? handleDrop : undefined}
-            onDragEnd={isAdmin ? handleDragEnd : undefined}
-            className={`w-full flex items-center gap-1 px-4 py-2 text-sm transition-colors ${
+            draggable={isAdmin && !mobile ? true : undefined}
+            onDragStart={isAdmin && !mobile ? handleDragStart : undefined}
+            onDragOver={isAdmin && !mobile ? handleDragOver : undefined}
+            onDragLeave={isAdmin && !mobile ? handleDragLeave : undefined}
+            onDrop={isAdmin && !mobile ? handleDrop : undefined}
+            onDragEnd={isAdmin && !mobile ? handleDragEnd : undefined}
+            className={`w-full flex items-center gap-1 px-4 py-2 text-sm transition-colors select-none ${
               dragOverKey === node.key ? 'bg-amber-100 border-t-2 border-amber-400' : ''
             } ${
               isActive
                 ? 'bg-amber-50 text-amber-700 font-medium'
                 : 'text-gray-600 hover:bg-gray-50'
-            } ${isAdmin && !mobile ? 'cursor-grab active:cursor-grabbing' : ''}`}
+            }`}
             style={{ paddingLeft: `${12 + depth * 12}px` }}
           >
             {isAdmin && !mobile && (
-              <svg className="w-3 h-3 text-gray-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm8-16a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
-              </svg>
+              <span className="cursor-grab active:cursor-grabbing shrink-0">
+                <svg className="w-3 h-3 text-gray-400 hover:text-gray-600" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm8-16a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
+                </svg>
+              </span>
             )}
             {hasChildren && (
-              <button onClick={() => toggleCategory(node.key)} className="shrink-0">
+              <button onClick={() => toggleCategory(node.key)} className="shrink-0" draggable={false}>
                 <svg
                   className={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
                   fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -799,7 +801,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
               </button>
             )}
             {!hasChildren && <span className="w-3 shrink-0" />}
-            <button onClick={() => { setActiveCategory(node.key); if (mobile) setShowMobileCategories(false); }} className="flex-1 text-left truncate">
+            <button onClick={() => { setActiveCategory(node.key); if (mobile) setShowMobileCategories(false); }} className="flex-1 text-left truncate" draggable={false}>
               {node.label}
             </button>
             {isAdmin && (
@@ -808,6 +810,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                   onClick={(e) => { e.stopPropagation(); setCreatingSubfolderIn(node.key); setSubfolderInput(''); setExpandedCategories((prev) => new Set([...prev, node.key])); }}
                   className="shrink-0 p-0.5 text-gray-300 hover:text-green-500 transition-colors"
                   title="Dodaj podfolder"
+                  draggable={false}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -817,6 +820,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                   onClick={(e) => { e.stopPropagation(); setRenamingFolder(node.key); setRenamingFolderValue(node.key); }}
                   className="shrink-0 p-0.5 text-gray-300 hover:text-amber-500 transition-colors"
                   title="Zmień nazwę folderu"
+                  draggable={false}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -826,6 +830,7 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
                   onClick={(e) => { e.stopPropagation(); handleDeleteFolder(node.key); }}
                   className="shrink-0 p-0.5 text-gray-300 hover:text-red-500 transition-colors"
                   title="Usuń folder"
+                  draggable={false}
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
