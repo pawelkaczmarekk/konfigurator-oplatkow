@@ -67,7 +67,7 @@ function Home() {
     const timer = setTimeout(() => {
       setSplashHiding(true);
       setTimeout(() => setShowSplash(false), 400);
-    }, 1200);
+    }, 2000);
     return () => clearTimeout(timer);
   }, []);
 
