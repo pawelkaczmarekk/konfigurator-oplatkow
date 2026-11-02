@@ -135,6 +135,8 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editingNameValue, setEditingNameValue] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
+  const [categoryOrder, setCategoryOrder] = useState<Record<string, number>>({});
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -164,7 +166,15 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     if (!isOpen) return;
     loadGraphics();
     loadTemplates();
-  }, [isOpen, loadGraphics, loadTemplates]);
+    fetch(`/api/category-order?tab=${activeTab}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data === 'object' && !data.error) {
+          setCategoryOrder(data as Record<string, number>);
+        }
+      })
+      .catch(() => {});
+  }, [isOpen, loadGraphics, loadTemplates, activeTab]);
 
   useEffect(() => {
     setVisibleCount(12);
@@ -188,7 +198,20 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
 
   const folders = [...new Set(patterns.map((p) => p.folder))];
   const templateFolders = [...new Set(templates.map((t) => t.folder))];
-  const categoryTree = buildCategoryTree(activeTab === 'graphics' ? folders : templateFolders);
+  const rawCategoryTree = buildCategoryTree(activeTab === 'graphics' ? folders : templateFolders);
+
+  const sortTree = (nodes: CategoryNode[]): CategoryNode[] => {
+    return [...nodes].sort((a, b) => {
+      const oa = categoryOrder[a.key] ?? 9999;
+      const ob = categoryOrder[b.key] ?? 9999;
+      return oa - ob;
+    }).map((node) => ({
+      ...node,
+      children: node.children ? sortTree(node.children) : node.children,
+    }));
+  };
+
+  const categoryTree = sortTree(rawCategoryTree);
 
   const filtered = (activeTab === 'graphics' ? patterns : templates).filter((p) => {
     if (p.name === '.gitkeep') return false;
@@ -663,6 +686,60 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
     const isRenaming = renamingFolder === node.key;
     const isCreatingSubfolder = creatingSubfolderIn === node.key;
 
+    const handleDragStart = (e: React.DragEvent) => {
+      e.dataTransfer.setData('text/plain', node.key);
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      setDragOverKey(node.key);
+    };
+
+    const handleDragLeave = () => {
+      setDragOverKey((prev) => prev === node.key ? null : prev);
+    };
+
+    const handleDrop = async (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOverKey(null);
+      const draggedKey = e.dataTransfer.getData('text/plain');
+      if (!draggedKey || draggedKey === node.key) return;
+
+      const siblings = categoryTree;
+      const currentOrder = siblings.map((s, i) => ({ key: s.key, order: categoryOrder[s.key] ?? i }));
+      const draggedIdx = currentOrder.findIndex((s) => s.key === draggedKey);
+      const targetIdx = currentOrder.findIndex((s) => s.key === node.key);
+      if (draggedIdx === -1 || targetIdx === -1) return;
+
+      const newOrder = [...currentOrder];
+      const [removed] = newOrder.splice(draggedIdx, 1);
+      newOrder.splice(targetIdx, 0, removed);
+
+      const updatedMap: Record<string, number> = {};
+      newOrder.forEach((item, i) => { updatedMap[item.key] = i; });
+      setCategoryOrder(updatedMap);
+
+      try {
+        const { data: { session } } = await supabase!.auth.getSession();
+        const token = session?.access_token;
+        if (!token) return;
+        await fetch('/api/category-order', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            tab: activeTab,
+            order: newOrder.map((item, i) => ({ path: item.key, sort_order: i })),
+          }),
+        });
+      } catch {}
+    };
+
+    const handleDragEnd = () => {
+      setDragOverKey(null);
+    };
+
     return (
       <div key={node.key}>
         {isRenaming ? (
@@ -691,13 +768,26 @@ export default function PatternGallery({ canvas, isAdmin = false, shape, onShape
           </div>
         ) : (
           <div
+            draggable={isAdmin && !mobile}
+            onDragStart={isAdmin ? handleDragStart : undefined}
+            onDragOver={isAdmin ? handleDragOver : undefined}
+            onDragLeave={isAdmin ? handleDragLeave : undefined}
+            onDrop={isAdmin ? handleDrop : undefined}
+            onDragEnd={isAdmin ? handleDragEnd : undefined}
             className={`w-full flex items-center gap-1 px-4 py-2 text-sm transition-colors ${
+              dragOverKey === node.key ? 'bg-amber-100 border-t-2 border-amber-400' : ''
+            } ${
               isActive
                 ? 'bg-amber-50 text-amber-700 font-medium'
                 : 'text-gray-600 hover:bg-gray-50'
-            }`}
+            } ${isAdmin && !mobile ? 'cursor-grab active:cursor-grabbing' : ''}`}
             style={{ paddingLeft: `${12 + depth * 12}px` }}
           >
+            {isAdmin && !mobile && (
+              <svg className="w-3 h-3 text-gray-300 shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M8 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm8-16a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4z" />
+              </svg>
+            )}
             {hasChildren && (
               <button onClick={() => toggleCategory(node.key)} className="shrink-0">
                 <svg
