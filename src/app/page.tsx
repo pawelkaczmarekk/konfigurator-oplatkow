@@ -57,9 +57,19 @@ function Home() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectLoading, setProjectLoading] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [splashHiding, setSplashHiding] = useState(false);
   useContentProtection();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSplashHiding(true);
+      setTimeout(() => setShowSplash(false), 400);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const order = searchParams.get('order');
@@ -135,6 +145,25 @@ function Home() {
   };
 
   const isOrderMode = !!orderId;
+
+  if (showSplash) {
+    return (
+      <div className={`splash-screen ${splashHiding ? 'hiding' : ''} fixed inset-0 z-50 bg-gradient-to-b from-amber-50 to-white flex flex-col items-center justify-center`}>
+        <div className="text-center">
+          <h1 className="text-4xl md:text-5xl font-bold text-amber-800 tracking-tight">
+            Konfigurator
+          </h1>
+          <h2 className="text-3xl md:text-4xl font-light text-amber-600 mt-1 tracking-wide">
+            opłatków
+          </h2>
+          <div className="splash-line h-0.5 bg-amber-400 mx-auto mt-6 rounded-full" />
+          <p className="splash-subtitle text-sm text-amber-400 mt-4 tracking-widest uppercase">
+            Projektuj &bull; Drukuj
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (projectLoading) {
     return (
