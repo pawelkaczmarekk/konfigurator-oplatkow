@@ -38,7 +38,7 @@ export default function SaveOrderButton({ canvas, shape, projectId }: SaveOrderB
       const res = await fetch(`/api/projects/${projectId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ canvasJsonPath, shape, locked: true, status: 'gotowy' }),
+        body: JSON.stringify({ canvasJsonPath, shape, locked: true }),
       });
 
       if (!res.ok) throw new Error('Błąd zapisu');
