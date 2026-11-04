@@ -5,10 +5,11 @@ import { supabase } from '@/lib/supabase-browser';
 import { isAllowedEmail } from '@/lib/auth-config';
 import Link from 'next/link';
 
-type ProjectStatus = 'nowy' | 'gotowy' | 'w_realizacji' | 'anulowany';
+type ProjectStatus = 'nowy' | 'do_druku' | 'gotowy' | 'w_realizacji' | 'anulowany';
 
 const STATUS_CONFIG: Record<ProjectStatus, { label: string; color: string; bg: string }> = {
   nowy: { label: 'Nowy', color: 'text-gray-700', bg: 'bg-gray-100' },
+  do_druku: { label: 'Do druku', color: 'text-amber-700', bg: 'bg-amber-50' },
   gotowy: { label: 'Gotowy', color: 'text-green-700', bg: 'bg-green-50' },
   w_realizacji: { label: 'W realizacji', color: 'text-blue-700', bg: 'bg-blue-50' },
   anulowany: { label: 'Anulowany', color: 'text-red-700', bg: 'bg-red-50' },
@@ -80,6 +81,8 @@ export default function AdminProjectsPage() {
   const [authLoading, setAuthLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'all'>('all');
+  const [hideGotowy, setHideGotowy] = useState(false);
+  const [hideAnulowany, setHideAnulowany] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -156,6 +159,14 @@ export default function AdminProjectsPage() {
       result = result.filter((p) => p.status === statusFilter);
     }
 
+    if (hideGotowy) {
+      result = result.filter((p) => p.status !== 'gotowy');
+    }
+
+    if (hideAnulowany) {
+      result = result.filter((p) => p.status !== 'anulowany');
+    }
+
     const range = getDateRange(datePreset);
     if (range) {
       result = result.filter((p) => {
@@ -172,7 +183,7 @@ export default function AdminProjectsPage() {
     }
 
     return result;
-  }, [projects, search, statusFilter, datePreset, dateFrom, dateTo]);
+  }, [projects, search, statusFilter, hideGotowy, hideAnulowany, datePreset, dateFrom, dateTo]);
 
   if (authLoading) {
     return (
@@ -234,6 +245,7 @@ export default function AdminProjectsPage() {
             >
               <option value="all">Wszystkie statusy</option>
               <option value="nowy">Nowy</option>
+              <option value="do_druku">Do druku</option>
               <option value="gotowy">Gotowy</option>
               <option value="w_realizacji">W realizacji</option>
               <option value="anulowany">Anulowany</option>
@@ -340,7 +352,26 @@ export default function AdminProjectsPage() {
                             {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
                               <option key={key} value={key}>{cfg.label}</option>
                             ))}
-                          </select>
+</select>
+
+            <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={hideGotowy}
+                onChange={(e) => setHideGotowy(e.target.checked)}
+                className="rounded border-gray-300 text-amber-600 focus:ring-amber-400"
+              />
+              Ukryj gotowe
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={hideAnulowany}
+                onChange={(e) => setHideAnulowany(e.target.checked)}
+                className="rounded border-gray-300 text-amber-600 focus:ring-amber-400"
+              />
+              Ukryj anulowane
+            </label>
                         </td>
                         <td className="px-4 py-3">
                           <a

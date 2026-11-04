@@ -38,7 +38,7 @@ export default function SaveShareButton({ canvas, shape }: SaveShareButtonProps)
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ canvasJsonPath, shape }),
+        body: JSON.stringify({ canvasJsonPath, shape, status: 'do_druku' }),
       });
 
       if (!res.ok) throw new Error('Błąd zapisu');
