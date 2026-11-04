@@ -251,6 +251,25 @@ export default function AdminProjectsPage() {
               <option value="anulowany">Anulowany</option>
             </select>
 
+            <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={hideGotowy}
+                onChange={(e) => setHideGotowy(e.target.checked)}
+                className="rounded border-gray-300 text-amber-600 focus:ring-amber-400"
+              />
+              Ukryj gotowe
+            </label>
+            <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={hideAnulowany}
+                onChange={(e) => setHideAnulowany(e.target.checked)}
+                className="rounded border-gray-300 text-amber-600 focus:ring-amber-400"
+              />
+              Ukryj anulowane
+            </label>
+
             <div className="h-6 w-px bg-gray-200" />
 
             <div className="flex gap-1">
@@ -353,25 +372,6 @@ export default function AdminProjectsPage() {
                               <option key={key} value={key}>{cfg.label}</option>
                             ))}
 </select>
-
-            <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={hideGotowy}
-                onChange={(e) => setHideGotowy(e.target.checked)}
-                className="rounded border-gray-300 text-amber-600 focus:ring-amber-400"
-              />
-              Ukryj gotowe
-            </label>
-            <label className="flex items-center gap-1.5 text-xs text-gray-600 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={hideAnulowany}
-                onChange={(e) => setHideAnulowany(e.target.checked)}
-                className="rounded border-gray-300 text-amber-600 focus:ring-amber-400"
-              />
-              Ukryj anulowane
-            </label>
                         </td>
                         <td className="px-4 py-3">
                           <a
