@@ -19,6 +19,7 @@ import BottomSheet from '@/components/BottomSheet';
 import MobileBottomBar from '@/components/MobileBottomBar';
 import { useContentProtection } from '@/hooks/useContentProtection';
 import { supabase } from '@/lib/supabase-browser';
+import { isAllowedEmail } from '@/lib/auth-config';
 
 const FabricCanvas = dynamic(() => import('@/components/FabricCanvas'), {
   ssr: false,
@@ -85,6 +86,9 @@ function Home() {
 
     const initOrderProject = async () => {
       try {
+        const { data: { session } } = await supabase!.auth.getSession();
+        const isAdmin = session?.user?.email && isAllowedEmail(session.user.email);
+
         const res = await fetch('/api/projects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -94,6 +98,11 @@ function Home() {
         if (!res.ok) throw new Error('Błąd tworzenia projektu');
 
         const data = await res.json();
+
+        if (data.exists && isAdmin) {
+          router.replace('/projekt/' + data.id);
+          return;
+        }
 
         if (data.locked) {
           router.replace('/dziekujemy');
